@@ -1,0 +1,26 @@
+{
+  "name": "fundamental-web-project",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Hundredzz/Fundamental-Web-Project.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Hundredzz/Fundamental-Web-Project/issues"
+  },
+  "homepage": "https://github.com/Hundredzz/Fundamental-Web-Project#readme",
+  "dependencies": {
+    "ejs": "^4.0.1",
+    "express": "^5.2.1",
+    "sqlite3": "^5.1.7"
+  }
+}
