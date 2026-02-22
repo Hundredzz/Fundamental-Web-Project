@@ -1,0 +1,168 @@
+body {
+    margin: 0;
+    background: url(/img/bg.png) repeat, #3B010B;
+    overflow-x: hidden;
+    margin-left: 15%;
+}
+.container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background-color: #75162D;
+    border-radius: 10px;
+    width: 100%;
+    padding: 5% 2%;
+    margin-right: 15%;
+}
+h1 {
+    text-align: center;
+    color: #F2D9A0;
+}
+input {
+    width: 70%;
+    padding: 3.5%;
+    margin: 5%;
+    background-color: #75162D;
+    border: 1px solid #F2D9A0;
+    color: #F2D9A0;
+    border-radius: 10px;
+    outline: none;
+}
+
+input::placeholder {
+    color: #F2D9A0;
+    opacity: 0.7;
+    /* ปรับให้จางลงนิดนึงเพื่อให้แยกออกว่าคือคำแนะนำ */
+}
+
+/* 3. สำหรับ Browser ตระกูล Safari / iOS (เผื่อมันดื้อ) */
+input::-webkit-input-placeholder {
+    color: #F2D9A0;
+}
+
+/* 4. สำหรับกรณี Browser เติมคำให้อัตโนมัติ (Autofill) */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+    -webkit-text-fill-color: #F2D9A0 !important;
+    /* บังคับสีตัวอักษร */
+    box-shadow: 0 0 0px 1000px #75162D inset;
+    /* บังคับสีพื้นหลังให้เป็นสีเดิม */
+    transition: all 0.3s ease-in-out;
+}
+
+input:hover {
+    border-color: #3B010B;
+    /* เปลี่ยนสีขอบเป็นขาวสว่าง */
+    background-color: #75162D;
+    /* สว่างขึ้นนิดนึงเพื่อให้รู้ว่าชี้อยู่ */
+    cursor: pointer;
+    /* เปลี่ยนรูปเมาส์เป็นรูปมือ */
+}
+
+/* 2. เอฟเฟคตอนคลิกเพื่อพิมพ์ (Focus) */
+input:focus {
+    border-color: #3B010B;
+    background-color: #75162D;
+    /* เข้มขึ้นเพื่อให้ดูเหมือนโดนกดลงไป */
+    /* เพิ่มเงาเรืองแสง (Glow Effect) รอบกล่อง */
+    box-shadow: 0 0 8px #3B010B;
+    transform: scale(1.02);
+    /* ขยายใหญ่ขึ้นนิดเดียว 2% ให้ดูมีมิติ */
+}
+
+/* แถม: ปรับสี Placeholder ให้เข้ากัน */
+input::placeholder {
+    color: #F2D9A0;
+    opacity: 0.5;
+}
+
+button {
+    margin: 20px auto;
+    width: 50%;
+    /* ให้กว้างกว่า input นิดนึงเพื่อให้ดูเป็นฐาน */
+    padding: 12px;
+
+    /* ใช้ Gradient ไล่สีทองให้ดูหรูหรา */
+    background: linear-gradient(45deg, #f2e5c6, #F2D9A0);
+    color: #75162D;
+    /* ตัวอักษรสีแดงเข้มเพื่อให้ตัดกับพื้นทอง */
+
+    border: 1px solid #F2D9A0;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    /* ทำให้การขยับนุ่มนวล */
+    transition: all 0.3s ease;
+}
+
+/* --- เอฟเฟคตอนเอาเมาส์ไปชี้ (Hover) --- */
+button:hover {
+    border-color: #3B010B;
+    /* ขยายขนาดขึ้นเล็กน้อย */
+    transform: translateY(-3px) scale(1.03);
+}
+
+/* --- เอฟเฟคตอนกดลงไป (Active) --- */
+button:active {
+    /* ทำให้ปุ่มดูเหมือนโดนกดบุ๋มลงไป */
+    transform: translateY(1px) scale(0.98);
+    box-shadow: 0 2px 10px #3B010B;
+}
+
+/* a {
+            color: #F2D9A0;
+            text-decoration: none;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        a:hover {
+            color: #f2e5c6;
+            text-decoration: underline;
+        }
+        a:active {
+            color: #3B010B;
+            text-shadow: none;
+            transform: scale(0.95);
+        }*/
+
+.main-wrapper {
+    display: flex;
+    width: 100%;
+    min-height: 100vh;
+}
+
+/* ฝั่งซ้าย: พื้นหลังปกติ (หรือ /img/bg.png) และจัดฟอร์มไว้ตรงกลาง */
+.form-side {
+    flex: 1;
+    /* กินพื้นที่ 50% */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: url(/img/bg.png) repeat, #3B010B;
+}
+
+/* ฝั่งขวา: พื้นสีแดงเต็มพื้นที่ 50% */
+.brand-side {
+    flex: 1;
+    /* กินพื้นที่ 50% */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* ปรับขนาดวงกลมให้เหมาะสมกับพื้นที่ 50% */
+.floating-img {
+    width: 100%;
+    /* ขยายให้เด่นในพื้นที่ฝั่งขวา */
+    height: 100vh;
+}
+
+@media screen and (max-width: 800px) {
+    .brand-side {
+        flex: 0;
+    }
+}
