@@ -25,17 +25,42 @@ app.use(express.json())
 app.use(express.urlencoded({ extended: true }));
 
 app.get("/", (req, res) => {
-    res.render("login");
+    let errorMessage = null;
+
+    // ตรวจสอบว่ามี error ส่งมาทาง URL หรือไม่
+    if (req.query.error === "notfound") {
+        errorMessage = "ไม่พบบัญชีผู้ใช้งาน หรืออีเมลนี้ในระบบ";
+    } else if (req.query.error === "inactive") {
+        errorMessage = "บัญชีนี้ถูกระงับการใช้งาน";
+    } else if (req.query.error === "wrongpassword") {
+        errorMessage = "รหัสผ่านไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง";
+    }
+
+    res.render("login", { error: errorMessage });
 });
 
 app.post("/login", (req, res) => {
     const {username, password} = req.body;
 
+    const sql = `SELECT Users.password, Users.status
+        FROM Users 
+        INNER JOIN Employees ON Users.employee_id = Employees.employee_id 
+        WHERE Users.username = ? OR Employees.email = ?`;
+
     // 1. Find the user in the database
-    db.get(`SELECT username, password, status FROM users WHERE username = ?`, [username], (err, row) => {
-        if (err) return res.status(500).send("Database error");
-        if (!row) return res.status(400).send("User not found");
-        if (row.status === "Inactive") return res.status(403).send("Account is inactive");
+    db.get(sql, [username, username], (err, row) => {
+        if (err) return res.status(500).send(err.message);
+        
+        if (!row) {
+            // แก้ไขตรงนี้: ชี้กลับไปที่หน้าหลัก (/) พร้อมส่ง query string
+            return res.redirect("/?error=notfound");
+        }
+        
+        if (row.status === "Inactive") {
+            // เพิ่มการจัดการสถานะ Inactive
+            return res.redirect("/?error=inactive");
+        }
+
         // 2. Split the saved password string back into the salt and the hash
         const savedPassword = row.password;
         const [salt, originalHash] = savedPassword.split(":");
@@ -50,7 +75,8 @@ app.post("/login", (req, res) => {
             if (attemptHash === originalHash) {
                 res.send("Login successful!");
             } else {
-                res.send("Incorrect password.");
+                // แก้ไขตรงนี้: ถ้ารหัสผิด ให้ redirect กลับไปหน้าแรกเช่นกัน
+                res.redirect("/?error=wrongpassword");
             }
         });
     });

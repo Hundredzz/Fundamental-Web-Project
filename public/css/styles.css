@@ -4,17 +4,26 @@ body {
     overflow-x: hidden;
     margin-left: 15%;
 }
-.container {
+.container, form {
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    background-color: #75162D;
     border-radius: 10px;
     width: 100%;
     padding: 5% 2%;
+    
+}
+
+.container{
+    gap: 10px;
     margin-right: 15%;
 }
+
+form{
+    background-color: #75162D;
+}
+
 h1 {
     text-align: center;
     color: #F2D9A0;
@@ -159,6 +168,22 @@ button:active {
     width: 100%;
     /* ขยายให้เด่นในพื้นที่ฝั่งขวา */
     height: 100vh;
+}
+
+.error-box {
+    color: #721c24;
+    background-color: #f8d7da;
+    border: 1px solid #f5c6cb;
+    padding: 10px;
+    border-radius: 5px;
+    text-align: center;
+    animation: shake 0.4s ease-in-out;
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+    20%, 40%, 60%, 80% { transform: translateX(5px); }
 }
 
 @media screen and (max-width: 800px) {
