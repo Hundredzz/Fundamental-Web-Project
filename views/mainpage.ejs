@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>mainpage</title>
+    <style>
+        body {
+            margin: 0;
+            background: url(/img/bg.png) repeat, #3B010B;
+            overflow-x: hidden;
+        }
+
+        input {
+            width: 50%;
+            padding:2%;
+            margin-top: 2%;
+            margin-left: 2%;
+            background-color: #ffffff;
+            border: 1px solid #ffffff;
+            color: #3B010B;
+            border-radius: 10px;
+            font-size: 16px;
+            outline: none;
+        }
+
+        input::placeholder {
+            color: #3B010B;
+            opacity: 0.7;
+            /* ปรับให้จางลงนิดนึงเพื่อให้แยกออกว่าคือคำแนะนำ */
+        }
+
+        /* 3. สำหรับ Browser ตระกูล Safari / iOS (เผื่อมันดื้อ) */
+        input::-webkit-input-placeholder {
+            color: #3B010B;
+        }
+
+        /* 4. สำหรับกรณี Browser เติมคำให้อัตโนมัติ (Autofill) */
+        input:-webkit-autofill,
+        input:-webkit-autofill:hover,
+        input:-webkit-autofill:focus {
+            -webkit-text-fill-color: #3B010B !important;
+            /* บังคับสีตัวอักษร */
+            box-shadow: 0 0 0px 1000px #ffffff inset;
+            /* บังคับสีพื้นหลังให้เป็นสีเดิม */
+            transition: all 0.3s ease-in-out;
+        }
+
+        input:hover {
+            border-color: #ffffff;
+            /* เปลี่ยนสีขอบเป็นขาวสว่าง */
+            background-color: #ffffff;
+            /* สว่างขึ้นนิดนึงเพื่อให้รู้ว่าชี้อยู่ */
+            cursor: pointer;
+            /* เปลี่ยนรูปเมาส์เป็นรูปมือ */
+        }
+
+        /* 2. เอฟเฟคตอนคลิกเพื่อพิมพ์ (Focus) */
+        input:focus {
+            border-color: #ffffff;
+            background-color: #ffffff;
+            /* เข้มขึ้นเพื่อให้ดูเหมือนโดนกดลงไป */
+            /* เพิ่มเงาเรืองแสง (Glow Effect) รอบกล่อง */
+            box-shadow: 0 0 8px #ffffff;
+            transform: scale(1.02);
+            /* ขยายใหญ่ขึ้นนิดเดียว 2% ให้ดูมีมิติ */
+        }
+
+        button {
+            margin: 20px auto;
+            width: 50%;
+            /* ให้กว้างกว่า input นิดนึงเพื่อให้ดูเป็นฐาน */
+            padding: 12px;
+
+            /* ใช้ Gradient ไล่สีทองให้ดูหรูหรา */
+            background: linear-gradient(45deg, #f2e5c6, #F2D9A0);
+            color: #75162D;
+            /* ตัวอักษรสีแดงเข้มเพื่อให้ตัดกับพื้นทอง */
+
+            border: 1px solid #F2D9A0;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            /* ทำให้การขยับนุ่มนวล */
+            transition: all 0.3s ease;
+        }
+
+        /* --- เอฟเฟคตอนเอาเมาส์ไปชี้ (Hover) --- */
+        button:hover {
+            border-color: #3B010B;
+            /* ขยายขนาดขึ้นเล็กน้อย */
+            transform: translateY(-3px) scale(1.03);
+        }
+
+        /* --- เอฟเฟคตอนกดลงไป (Active) --- */
+        button:active {
+            /* ทำให้ปุ่มดูเหมือนโดนกดบุ๋มลงไป */
+            transform: translateY(1px) scale(0.98);
+            box-shadow: 0 2px 10px #3B010B;
+        }
+
+        /* a {
+            color: #F2D9A0;
+            text-decoration: none;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        a:hover {
+            color: #f2e5c6;
+            text-decoration: underline;
+        }
+        a:active {
+            color: #3B010B;
+            text-shadow: none;
+            transform: scale(0.95);
+        }*/
+        @media screen and (max-width: 800px) {
+            .brand-side {
+                flex: 0;
+            }
+        }
+
+        h5,p,h1 {
+            color: black;
+        }
+        h1{
+            margin: 5%;
+        }
+        .big{
+            width: 100vw;
+            display: flex;
+        }
+        .small{
+            width: 50vw;
+            padding: 1%;
+            margin: 3%;
+            background-color: #ffffff;
+            color: #3B010B;
+            border: 1px solid #f2e5c6;
+            border-radius: 10px;
+            text-align: left;
+        }
+    </style>
+</head>
+
+<body>
+    <input type="text" placeholder="ค้นหาสินค้า">
+    <div class="big">
+        <div class="small">
+            <h5>สินค้าทั้งหมด</h5>
+            <h1>รายการ</h1>
+            <p>อัปเดตล่าสุด :</p>
+        </div>
+
+        <div class="small">
+            <h5>สินค้าทั้งหมด</h5>
+            <h1>รายการ</h1>
+            <p>อัปเดตล่าสุด :</p>
+        </div>
+    </div>
+    <div class="big">
+        <div class="small">
+            <h5>สินค้าทั้งหมด</h5>
+            <h1>รายการ</h1>
+            <p>อัปเดตล่าสุด :</p>
+        </div>
+
+        <div class="small">
+            <h5>สินค้าทั้งหมด</h5>
+            <h1>รายการ</h1>
+            <p>อัปเดตล่าสุด :</p>
+        </div>
+    </div>
+</body>
+
+</html>
