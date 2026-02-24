@@ -104,6 +104,60 @@ app.post("/add", (req, res) => {
     });
 });
 
+// หน้าประวัติการทำรายการ
+app.get('/history', (req, res) => {
+    const sql = `
+        SELECT t.trans_id, t.trans_date, t.trans_type, 
+               p.product_name, t.change_amount, u.username
+        FROM Transactions t
+        LEFT JOIN Products p ON t.sku = p.sku
+        LEFT JOIN Users u ON t.user_id = u.user_id
+        ORDER BY t.trans_date DESC
+    `;
+    db.all(sql, [], (err, rows) => {
+        if (err) return res.status(500).send("Database Error: " + err.message);
+        console.log("History Data:", rows); // ตรวจสอบข้อมูลใน Terminal
+        res.render('history', { transactions: rows });
+    });
+});
+
+// หน้าสินค้าใกล้หมดอายุ
+app.get('/expiry', (req, res) => {
+    const sql = `
+        SELECT p.sku, p.product_name, 
+               l.lot_batch_code, l.quantity, l.exp_date
+        FROM Lots l
+        LEFT JOIN Products p ON l.sku = p.sku
+        WHERE l.quantity > 0 
+          AND l.exp_date <= date('now', '+30 days')
+        ORDER BY l.exp_date ASC
+    `;
+    db.all(sql, [], (err, rows) => {
+        if (err) return res.status(500).send("Database Error: " + err.message);
+        res.render('expiry', { expiringProducts: rows });
+    });
+});
+
+// API สำหรับแจ้งเตือน (Bell Icon)
+app.get('/api/notifications', (req, res) => {
+    const sqlExpired = `SELECT COUNT(*) AS count FROM Lots WHERE quantity > 0 AND exp_date < date('now')`;
+    const sqlSoon = `SELECT COUNT(*) AS count FROM Lots WHERE quantity > 0 AND exp_date >= date('now') AND exp_date <= date('now', '+30 days')`;
+
+    db.get(sqlExpired, [], (err, expiredResult) => {
+        if (err) return res.status(500).json({ error: err.message });
+        
+        db.get(sqlSoon, [], (err, soonResult) => {
+            if (err) return res.status(500).json({ error: err.message });
+            
+            res.json({
+                expiredCount: expiredResult.count,
+                expiringSoonCount: soonResult.count,
+                totalAlerts: expiredResult.count + soonResult.count
+            });
+        });
+    });
+});
+
 app.listen(port, () => {
     console.log(`Server is running on http://localhost:${port}`);
 });

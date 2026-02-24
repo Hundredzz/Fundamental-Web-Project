@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ประวัติการทำรายการ</title>
+</head>
+<body>
+    <h1>ประวัติการรับเข้า-จ่ายออก</h1>
+    <table border="1" cellpadding="10">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>วันที่-เวลา</th>
+                <th>ประเภท</th>
+                <th>สินค้า</th>
+                <th>จำนวน</th>
+                <th>ผู้ดำเนินการ</th>
+            </tr>
+        </thead>
+        <tbody>
+            <% transactions.forEach(t => { %>
+                <tr>
+                    <td><%= t.trans_id %></td>
+                    <td><%= t.trans_date %></td>
+                    <td><%= t.trans_type %></td>
+                    <td><%= t.product_name %></td>
+                    <td style="color: <%= t.change_amount < 0 ? 'red' : 'green' %>">
+                        <%= t.change_amount %>
+                    </td>
+                    <td><%= t.username %></td>
+                </tr>
+            <% }) %>
+        </tbody>
+    </table>
+    <br>
+    <a href="/expiry">ดูสินค้าใกล้หมดอายุ</a>
+</body>
+</html>
