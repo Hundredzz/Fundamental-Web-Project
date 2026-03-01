@@ -56,6 +56,7 @@ body{
 /* --- The Main Content Wrapper --- */
 .main-content {
     transition: margin-left 0.3s ease; /* Smooth push effect */
+    margin-top: 80px;
     margin-left: 0; 
     padding: 20px;
 }
@@ -72,6 +73,8 @@ body{
     gap: 10px;
     justify-content: space-between;
     position: fixed;
+    top: 0;
+    left: 0;
     cursor: pointer;
     background: none;
     border: none;
