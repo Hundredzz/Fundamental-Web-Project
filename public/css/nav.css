@@ -1,0 +1,98 @@
+body{
+    margin: 0;
+    padding: 0;
+}
+
+.side-menu {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    height: 100vh;
+    box-sizing: border-box;
+    width: 270px;
+    position: fixed; /* Stays fixed to the left side */
+    top: 0;
+    left: -272px; /* Hidden off-screen by default */
+    background-color: #75162E; /* Dark sidebar color */
+    padding: 20px;
+    padding-top: 150px;
+    transition: left 0.3s ease; /* Smooth slide in */
+}
+
+.side-menu a.user-button {
+    color: #75162E;
+    background-color: #F2E5C5;
+}
+
+
+.side-menu a {
+    text-decoration: none;
+    font-size: 18px;
+    padding: 10px 15px;
+    border-radius: 100px;
+    color: #F2D9A3;
+    display: block;
+    box-sizing: border-box;
+    font-size: 1.3rem;
+}
+
+
+
+.side-menu a:hover {
+    padding: 8px 13px;
+    color: #75162E;
+    background-color: #F2E5C5; /* Slight highlight on hover */
+    box-shadow: inset 0px 4px 4px rgba(0, 0, 0, 0.25);
+    border: 2px solid #F2E5C5;
+    box-sizing: border-box;
+}
+
+
+/* Class to open the menu */
+.side-menu.open {
+    left: 0; 
+}
+
+/* --- The Main Content Wrapper --- */
+.main-content {
+    transition: margin-left 0.3s ease; /* Smooth push effect */
+    margin-top: 80px;
+    margin-left: 0; 
+    padding: 20px;
+}
+
+/* Class to push the content over */
+.main-content.pushed {
+    margin-left: 270px; /* Matches the width of the sidebar */
+}
+
+/* --- The Toggle Button --- */
+.menu-toggle-btn {
+    padding: 25px 35px;
+    display: flex;
+    gap: 10px;
+    justify-content: space-between;
+    position: fixed;
+    top: 0;
+    left: 0;
+    cursor: pointer;
+    background: none;
+    border: none;
+    z-index: 1;
+    margin-bottom: 20px;
+    transition: color 0.3s ease;
+}
+
+.menu-toggle-btn h2{
+    margin: 0;
+    font-size: 1.5rem;
+    margin-top: 9px;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
+}
+
+.menu-toggle-btn img{
+    transition: opacity 0.3s ease;
+    height: 36px;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.25));
+}
+
