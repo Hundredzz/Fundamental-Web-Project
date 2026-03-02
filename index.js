@@ -83,6 +83,12 @@ app.get("/mainpage", (req, res) => {
 app.get("/history", (req, res) => {
     res.render("history");
 });
+app.get("/undefind", (req, res) => {
+    res.render("undefind");
+});
+app.get("/manage", (req, res) => {
+    res.render("manage");
+});
 app.listen(port, () => {
     console.log(`Server is running on http://localhost:${port}`);
 });

@@ -1,0 +1,87 @@
+input {
+    width: 20%;
+    padding: 15px;
+    margin: 0.5%;
+    background-color: #75162D;
+    border: 1px solid #F2D9A0;
+    color: #F2D9A0;
+    border-radius: 5px;
+    outline: none;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(70%) sepia(50%) saturate(400%) hue-rotate(10deg);
+    cursor: pointer;
+}
+
+input::placeholder {
+    color: #F2D9A0;
+    /* ปรับให้จางลงนิดนึงเพื่อให้แยกออกว่าคือคำแนะนำ */
+}
+
+/* 3. สำหรับ Browser ตระกูล Safari / iOS (เผื่อมันดื้อ) */
+input::-webkit-input-placeholder {
+    color: #F2D9A0;
+}
+
+/* 4. สำหรับกรณี Browser เติมคำให้อัตโนมัติ (Autofill) */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+    -webkit-text-fill-color: #F2D9A0 !important;
+    box-shadow: 0 0 0px 1000px #75162D inset;
+    transition: all 0.3s ease-in-out;
+}
+
+input:hover {
+    border-color: #3B010B;
+    background-color: #75162D;
+    cursor: pointer;
+}
+
+input:focus {
+    border-color: #3B010B;
+    background-color: #75162D;
+    box-shadow: 0 0 8px #3B010B;
+    transform: scale(1.02);
+}
+
+button {
+    display: flex;
+    width: fit-content;
+    margin: 0.5%;
+    padding: 15px;
+    background: linear-gradient(45deg, #f2e5c6, #F2D9A0);
+    color: #75162D;
+    border: 1px solid #F2D9A0;
+    border-radius: 5px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    align-items: center;
+    justify-content: center;
+}
+
+button:hover {
+    border-color: #3B010B;
+    transform: translateY(-3px) scale(1.03);
+}
+
+button:active {
+    transform: translateY(1px) scale(0.98);
+    box-shadow: 0 0 10px #3B010B;
+}
+
+select {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin: 0.5%;
+    background-color: #75162D;
+    border: 1px solid #F2D9A0;
+    border-radius: 5px;
+    color: #F2D9A0;
+    padding: 15px;
+}

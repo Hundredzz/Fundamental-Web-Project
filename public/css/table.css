@@ -1,0 +1,35 @@
+body {
+    margin: 0;
+    background: url(/img/big-background.png) repeat, #3B010B;
+    background-size: cover;
+    overflow-x: hidden;
+}
+
+table {
+    width: 80%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+th {
+    background-color: #75162D;
+    color: #F2D9A0;
+    padding: 10px;
+    border: 1px solid #3B010B;
+}
+
+td {
+    color: #3B010B;
+    padding: 10px;
+    border: 1px solid #3B010B;
+    text-align: center;
+
+}
+
+tr {
+    background-color: #F2D9A0;
+}
+
+tr:nth-child(odd) {
+    background-color: #F2E5C5;
+}
