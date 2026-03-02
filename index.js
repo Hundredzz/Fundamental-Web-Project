@@ -103,7 +103,18 @@ app.post("/add", (req, res) => {
         });
     });
 });
-
+app.get("/mainpage", (req, res) => {
+    res.render("mainpage");
+});
+app.get("/history", (req, res) => {
+    res.render("history");
+});
+app.get("/undefind", (req, res) => {
+    res.render("undefind");
+});
+app.get("/manage", (req, res) => {
+    res.render("manage");
+});
 app.listen(port, () => {
     console.log(`Server is running on http://localhost:${port}`);
 });
