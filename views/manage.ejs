@@ -22,7 +22,7 @@
             background-color: #75162D;
             width: 80%;
             padding-block: 1%;
-            gap: 20px;
+            gap: 10px;
         }
         h1 {
             text-align: center;
@@ -50,17 +50,25 @@
             margin: 15px;
             height: 36px;
         }
+
     </style>
 </head>
 <body>
     <div class="big">
         <h1>จัดการผู้ใช้งาน</h1>
 
-        <form action="/history" method="post" class="container">
-            <input type="text" name="username" id="username" placeholder="ระบุชื่อสินค้า">
-            <input type="date" name="data" id="date">
+        <form action="/manage" method="post" class="container">
+            <input type="text" name="username" id="username" placeholder="ระบุรหัสพนักงาน">
+            <input type="text" name="username" id="username" placeholder="ระบุชื่อผู้ใช้">
+            <input type="text" name="username" id="username" placeholder="ระบุชื่อ-นามสกุล">
+            
             <select name="type" id="type">
-                <option value="">เลือกประเภทรายการ</option>
+                <option value="">ตำแหน่งงาน</option>
+                <option value="รับสินค้า">รับสินค้า</option>
+                <option value="จ่ายสินค้า">จ่ายสินค้า</option>
+            </select>
+            <select name="type" id="type">
+                <option value="">บทบาท</option>
                 <option value="รับสินค้า">รับสินค้า</option>
                 <option value="จ่ายสินค้า">จ่ายสินค้า</option>
             </select>
@@ -86,9 +94,11 @@
                     <td>วรรณณิศา อมรวงศ์ไพบูลย์</td>
                     <td>02-25-65</td>
                     <td>จ่าย</td>
-                    <td><a href="..."><img src="/img/edit-icon.svg"></a>
-                    <a href="..."><img src="/img/delete-icon.svg"></a> 
-                    <a href="..."><img src="/img/home-icon.svg"></a></td>
+                    <td>
+                        <img src="/img/edit-icon.svg" id="editData"></a>
+                        <img src="/img/delete-icon.svg" id="deleteData"></a> 
+                        <img src="/img/notban-icon.svg" id="ban"></a>
+                    </td>
                 </tr>
                 <tr>
                     <td>1</td>
