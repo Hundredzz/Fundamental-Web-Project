@@ -115,6 +115,12 @@ app.get("/undefind", (req, res) => {
 app.get("/manage", (req, res) => {
     res.render("manage");
 });
+app.get("/report", (req, res) => {
+    res.render("report");
+});
+app.get("/createReport", (req, res) => {
+    res.render("createReport");
+});
 app.listen(port, () => {
     console.log(`Server is running on http://localhost:${port}`);
 });

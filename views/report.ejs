@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Report</title>
+    <style>
+        body {
+            margin: 0;
+            background: url(/img/big-background.png) repeat, #3B010B;
+            background-size: cover;
+            overflow-x: hidden;
+            
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        h1 {
+            color: #75162D;
+            margin: 1.5%;
+            text-align: center;
+        }
+
+        button {
+            background-color: #75162D;
+            width: 35%;
+            color: #f2e5c6;
+            margin: 1.5%;
+            border-radius: 10px;
+            padding: 1.2%;
+            font-size: 20px;
+            border: 0px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            border-color: #3B010B;
+            border: 2px solid #3B010B;
+            transform: translateY(-3px) scale(1.03);
+        }
+        button:active {
+            box-shadow: 0 0px 10px #3B010B;
+            transform: translateY(1px) scale(0.98);
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <h1>สร้างรายงาน</h1>
+        <button>รายงานสต๊อก</button>
+        <button>รายงานความเคลื่อนไหว</button>
+        <button>สินค้าหมดอายุ</button>
+    </div>
+</body>
+
+</html>
