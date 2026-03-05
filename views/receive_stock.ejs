@@ -1,43 +1,31 @@
 <!DOCTYPE html>
-<html lang="th">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>รับสินค้าเข้าคลัง</title>
-    <link rel="stylesheet" href="/css/styleReceive.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/layout.css"> 
+    <link rel="stylesheet" href="/css/styleReceive.css"> 
+    <link rel="stylesheet" href="/css/nav.css">
 </head>
 <body>
-    <div class="container">
-        <header>
-            <div class="logo">
-                <i class="fas fa-home"></i>
-                <span>สะดวกจัด</span>
-            </div>
-        </header>
-
-        <main class="content-wrapper">
-            <h1 class="main-title">รับสินค้าเข้าคลัง</h1>
+    <%- include('nav') %>
+        <div class="main-content">
+            <h1 class="header-title">รับสินค้าเข้าคลัง</h1>
             
-            <div class="inventory-card">
-                <ul class="item-list">
-                    <li class="item-row">
-                        <span class="item-text">1. Foundation</span>
-                        <a href="/receive-item/1" class="btn-green">รับ</a>
-                    </li>
-                    
-                    <li class="item-row">
-                        <span class="item-text">2. Concealer</span>
-                        <a href="/receive-item/2" class="btn-green">รับ</a>
-                    </li>
-
-                    <li class="item-row empty"></li>
-                    <li class="item-row empty"></li>
-                    <li class="item-row empty"></li>
-                    <li class="item-row empty"></li>
-                </ul>
+            <div class="list-container">
+                <% products.forEach(product => { %>
+                    <div class="product-card">
+                        <div class="product-info">
+                            <span class="product-number"><%= product.id %>.</span>
+                            <span class="product-name"><%= product.name %></span>
+                        </div>
+                        <a href="/receive/add/<%= product.id %>" class="btn-add">เพิ่ม</a>
+                    </div>
+                <% }); %>
             </div>
-        </main>
+        </div>
     </div>
+    <script src="/script/nav.js"></script>
 </body>
 </html>

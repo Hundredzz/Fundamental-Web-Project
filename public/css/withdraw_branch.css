@@ -1,0 +1,24 @@
+body {
+    margin: 0;
+    background: url(/img/bg.png) repeat, #3B010B;
+    overflow-x: hidden;
+}
+
+.branch-card {
+    background-color: #5d0e1a;
+    color: white;
+    padding: 40px;
+    border-radius: 15px;
+    text-align: center;
+    width: 400px;
+}
+
+.branch-select {
+    width: 100%;
+    padding: 10px;
+    border-radius: 8px;
+    border: none;
+    background-color: white;
+    font-size: 1rem;
+    margin-top: 15px;
+}

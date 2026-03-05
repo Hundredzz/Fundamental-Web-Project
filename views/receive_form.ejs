@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>กรอกข้อมูลสินค้า</title>
+    <link rel="stylesheet" href="/css/layout.css">
+    <link rel="stylesheet" href="/css/receive_form.css">
+    <link rel="stylesheet" href="/css/nav.css">
+</head>
+<body>
+    <%- include('nav') %>
+        <div class="main-content">
+            <h1 class="header-title">กรอกข้อมูลสินค้า</h1>
+            
+            <div class="form-card">
+                <h2 class="product-display"><%= brand_name %> (ID: <%= brand_id %>)</h2>
+                
+                <form action="/save-stock" method="POST">
+                    <input type="hidden" name="brand_id" value="<%= brand_id %>">
+
+                    <div class="form-group">
+                        <label>จำนวนชิ้น :</label>
+                        <input type="number" name="quantity" required>
+                    </div>
+                    <div class="form-group">
+                        <label>เลข Lot/Batch :</label>
+                        <input type="text" name="lot_number" required>
+                    </div>
+                    <div class="form-group">
+                        <label>วันผลิต :</label>
+                        <input type="date" name="mfd_date">
+                    </div>
+                    <div class="form-group">
+                        <label>วันหมดอายุ :</label>
+                        <input type="date" name="exp_date">
+                    </div>
+                    <div class="form-group">
+                        <label>ซัพพลายเออร์ :</label>
+                        <input type="text" name="supplier">
+                    </div>
+                    <div class="form-group">
+                        <label>หมายเหตุ :</label>
+                        <input type="text" name="remark">
+                    </div>
+                    
+                    <button type="submit" class="btn-submit">ยืนยันการรับเข้า</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    <script src="/script/nav.js"></script>
+</body>
+</html>

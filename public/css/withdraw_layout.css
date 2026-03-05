@@ -1,0 +1,36 @@
+/* public/css/withdraw_layout.css */
+@import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;700&display=swap');
+
+body {
+    font-family: 'Sarabun', sans-serif;
+    margin: 0;
+    background-color: #f4e9d5;
+    background-image: url('/images/thai-pattern-bg.png');
+    background-size: cover;
+}
+
+.container {
+    display: flex;
+    min-height: 100vh;
+}
+
+.sidebar {
+    width: 250px;
+    background-color: #5d0e1a;
+    color: white;
+}
+
+.main-content {
+    flex-grow: 1;
+    padding: 50px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.header-title {
+    color: #5d0e1a;
+    font-size: 2rem;
+    margin-bottom: 20px;
+    font-weight: bold;
+}

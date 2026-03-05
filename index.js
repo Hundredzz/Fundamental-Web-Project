@@ -709,6 +709,104 @@ app.delete("/delete-product/:id", (req, res) => {
     });
 });
 
+app.get('/receive-stock', (req, res) => {
+    const products = [
+        { id: 1, name: 'Foundation' },
+        { id: 2, name: 'Concealer' }
+    ];
+
+    res.render('receive_stock', { 
+        products: products 
+    });
+});
+
+app.get('/receive/add/:id', (req, res) => {
+    const brandId = req.params.id;
+
+    db.get("SELECT * FROM brands WHERE brand_id = ?", [brandId], (err, row) => {
+        if (err || !row) {
+            return res.redirect('/receive');
+        }
+
+        res.render('receive_form', { 
+            brand_id: row.brand_id, 
+            brand_name: row.brand_name 
+        });
+    });
+});
+
+app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
+// ตรวจสอบและสร้างตาราง stock หากยังไม่มีอยู่
+db.serialize(() => {
+    db.run(`CREATE TABLE IF NOT EXISTS stock (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        brand_id INTEGER,
+        quantity INTEGER,
+        lot_number TEXT,
+        mfd_date TEXT,
+        exp_date TEXT,
+        supplier TEXT,
+        remark TEXT,
+        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+    )`, 
+    (err) => {
+        if (err) {
+            console.error("สร้างตารางไม่สำเร็จ:", err.message);
+        } else {
+            console.log("ตาราง stock พร้อมใช้งานแล้ว");
+        }
+    });
+});
+app.post('/save-stock', (req, res) => {
+    console.log("ข้อมูลที่รับมา:", req.body);
+
+    const { brand_id, quantity, lot_number, mfd_date, exp_date, supplier, remark } = req.body;
+    const sql = `INSERT INTO stock (brand_id, quantity, lot_number, mfd_date, exp_date, supplier, remark) VALUES (?, ?, ?, ?, ?, ?, ?)`;
+
+    db.run(sql, [brand_id, quantity, lot_number, mfd_date, exp_date, supplier, remark], function(err) {
+        if (err) {
+            console.error("SQL Error:", err.message);
+            return res.status(500).send("เกิดข้อผิดพลาด: " + err.message);
+        }
+        res.render('receive_success');
+    });
+});
+
+app.get('/withdraw', (req, res) => {
+    res.render('withdraw_branch');
+});
+
+app.get('/withdraw/select-product', (req, res) => {
+    const branchId = req.query.branch_id;
+    const products = [{id: 1, name: 'Foundation'}, {id: 2, name: 'Concealer'}];
+    res.render('withdraw_list', { branchId, branchName: 'สาขา ' + branchId, products });
+});
+
+app.get('/withdraw/item/:id', (req, res) => {
+    const productId = req.params.id;
+    const branchId = req.query.branch;
+    
+    let productName = "";
+    if (productId == "1") productName = "Foundation";
+    else if (productId == "2") productName = "Concealer";
+    else productName = "สินค้าทั่วไป";
+
+    res.render('withdraw_form', { 
+        productId: productId,
+        productName: productName,
+        branchId: branchId
+    });
+});
+
+app.post('/withdraw/confirm', (req, res) => {
+    res.render('withdraw_success');
+});
+
+app.get('/scan', (req, res) => {
+    res.render('scan');
+});
+
 app.listen(port, () => {
     console.log(`Server is running on http://localhost:${port}`);
 });
