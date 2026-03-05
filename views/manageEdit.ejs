@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <%- include('head') %>
     <title>แก้ไขผู้ใช้งาน</title>
     <link rel="stylesheet" href="/css/table.css">
+    <link rel="stylesheet" href="/css/button.css">
     <link rel="stylesheet" href="/css/search.css">
     <style>
         body {
@@ -14,6 +14,9 @@
             justify-content: center;
             align-items: center;
             height: 100vh;
+        }
+        .main-content{
+            margin-top: 0;
         }
         .content {
             padding: 40px;
@@ -26,8 +29,7 @@
         h1 {
             margin: 0;
             color: #75162D;
-            font-size: 24px;
-            align-self: flex-start;
+            align-self: center;
         }
         .row-group {
             display: flex;
@@ -35,17 +37,17 @@
             width: 100%;
         }
 
-        .input-id { 
+        .input-1 { 
             flex: 1; 
+            box-sizing: border-box;
         } 
-        .input-user { 
+        .input-2 { 
             flex: 2; 
-        } 
-        .full-width {
-            width: 80%; 
+            box-sizing: border-box;
         }
-        .half-width {
-            flex: 1; 
+        .full-width {
+            width: 98%; 
+            box-sizing: border-box;
         }
 
         .button-group {
@@ -68,35 +70,49 @@
     </style>
 </head>
 <body>
-
-    <div class="content">
-        <h1>แก้ไขผู้ใช้</h1>
+    <%- include('nav') %>
+    <form action="<%= path %>" method="POST" class="content main-content" id="main-content">
+        <h1><%= title %></h1>
         
         <div class="row-group">
-            <input type="text" class="input-id" placeholder="รหัสพนักงาน">
-            <input type="text" class="input-user" placeholder="ชื่อผู้ใช้">
+            <input type="text" class="input-1" name="employeeId" placeholder="รหัสพนักงาน" 
+                   value="<%= user ? user.employee_id : '' %>" <%= user ? 'readonly' : 'required' %>>
+                   
+            <input type="text" class="input-2" name="userName" placeholder="ชื่อผู้ใช้" 
+                   value="<%= user ? user.username : '' %>">
         </div>
-
-        <input type="text" class="full-width" placeholder="ชื่อ-นามสกุล">
-
+        
+        <input type="password" name="password" class="full-width" 
+               placeholder="<%= user ? 'รหัสผ่านใหม่ (เว้นว่างไว้ถ้าไม่ต้องการเปลี่ยน)' : 'รหัสผ่าน' %>" 
+               <%= user ? '' : 'required' %>>
+               
         <div class="row-group">
-            <select class="half-width">
-                <option value="">ตำแหน่งงาน</option>
-                <option value="รับสินค้า">รับสินค้า</option>
-                <option value="จ่ายสินค้า">จ่ายสินค้า</option>
-            </select>
-            <select class="half-width">
-                <option value="">บทบาท</option>
-                <option value="Admin">Admin</option>
-                <option value="User">User</option>
+            <input type="text" name="fname" class="input-1" placeholder="ชื่อ" 
+                   value="<%= user ? user.first_name : '' %>" required>
+                   
+            <input type="text" name="lname" class="input-1" placeholder="นามสกุล" 
+                   value="<%= user ? user.last_name : '' %>" required>
+        </div>
+        
+        <input type="email" name="email" class="full-width" placeholder="อีเมล (ไม่บังคับ)" 
+               value="<%= user ? user.email : '' %>">
+               
+        <div class="row-group">
+            <input type="text" class="input-1" name="phone" placeholder="เบอร์โทร (ไม่บังคับ)" 
+                   value="<%= user ? user.phone : '' %>">
+                   
+            <select class="input-1" name="role" required>
+                <option value="" disabled <%= !user ? 'selected' : '' %>>เลือกบทบาท</option>
+                <option value="ผู้จัดการ" <%= user && user.role === 'ผู้จัดการ' ? 'selected' : '' %>>ผู้จัดการ</option>
+                <option value="เจ้าหน้าที่คลัง" <%= user && user.role === 'เจ้าหน้าที่คลัง' ? 'selected' : '' %>>เจ้าหน้าที่คลัง</option>
             </select>
         </div>
 
         <div class="button-group">
-            <button class="bt-popup-no">ยกเลิก</button>
-            <button class="bt-popup-yes">บันทึกข้อมูล</button>
+            <button class="bt-popup-no style-button" type="button" onclick="window.location.href = '/manage'">ยกเลิก</button>
+            <button class="bt-popup-yes style-button" type="submit">บันทึกข้อมูล</button>
         </div>
-    </div>
+    </form>
 
 </body>
 </html>
