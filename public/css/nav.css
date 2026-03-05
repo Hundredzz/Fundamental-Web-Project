@@ -1,27 +1,29 @@
-body{
-    margin: 0;
-    padding: 0;
+:root {
+    --color-cherry: #75162E;
+    --color-cream: #F2E5C5;
+    --color-gold-muted: #F2D9A3;
 }
 
 .side-menu {
     display: flex;
     flex-direction: column;
     justify-content: space-between;
+    z-index: 2;
     height: 100vh;
     box-sizing: border-box;
     width: 270px;
     position: fixed; /* Stays fixed to the left side */
     top: 0;
     left: -272px; /* Hidden off-screen by default */
-    background-color: #75162E; /* Dark sidebar color */
+    background-color: var(--color-cherry); /* Dark sidebar color */
     padding: 20px;
     padding-top: 150px;
     transition: left 0.3s ease; /* Smooth slide in */
 }
 
 .side-menu a.user-button {
-    color: #75162E;
-    background-color: #F2E5C5;
+    color: var(--color-cherry);
+    background-color: var(--color-cream);
 }
 
 
@@ -30,20 +32,18 @@ body{
     font-size: 18px;
     padding: 10px 15px;
     border-radius: 100px;
-    color: #F2D9A3;
+    color: var(--color-cream);
     display: block;
     box-sizing: border-box;
     font-size: 1.3rem;
 }
 
-
-
 .side-menu a:hover {
     padding: 8px 13px;
-    color: #75162E;
-    background-color: #F2E5C5; /* Slight highlight on hover */
+    color: var(--color-cherry);
+    background-color: var(--color-cream); /* Slight highlight on hover */
     box-shadow: inset 0px 4px 4px rgba(0, 0, 0, 0.25);
-    border: 2px solid #F2E5C5;
+    border: 2px solid var(--color-cream);
     box-sizing: border-box;
 }
 
@@ -71,22 +71,39 @@ body{
     padding: 25px 35px;
     display: flex;
     gap: 10px;
-    justify-content: space-between;
     position: fixed;
     top: 0;
     left: 0;
+    z-index: 3;
+    /* REMOVED: position: fixed; top: 0; left: 0; z-index: 1; */
     cursor: pointer;
     background: none;
     border: none;
-    z-index: 1;
-    margin-bottom: 20px;
+    margin-bottom: 0; /* Changed from 20px so it doesn't stretch the header weirdly */
     transition: color 0.3s ease;
+}
+
+#web-header.scrolled{
+    background-color: var(--color-cream);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+#web-header {
+    position: fixed; /* Moves the fixed position to the wrapper */
+    top: 0;
+    left: 0;
+    height: 11vh;
+    width: 100vw;
+    z-index: 1; /* Make sure it stays above your main content */
+    background-color: transparent; /* Starts invisible */
+    transition: background-color 0.3s ease; /* Smooth transition */
 }
 
 .menu-toggle-btn h2{
     margin: 0;
     font-size: 1.5rem;
     margin-top: 9px;
+    color: var(--color-cherry);
     text-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
 }
 
