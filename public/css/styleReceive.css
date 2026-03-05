@@ -1,0 +1,92 @@
+/* ตั้งค่าพื้นฐานและฟอนต์ */
+body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Kanit', sans-serif; /* ฟอนต์ภาษาไทยยอดนิยม */
+    background-color: #f4eee0; /* สีพื้นหลังโทนอ่อนนวล */
+    /* ถ้ามีรูปพื้นหลังลายดอกไม้ ให้ใส่ตรงนี้ */
+    background-image: url('../images/bg-pattern.png'); 
+    background-size: cover;
+    min-height: 100vh;
+}
+
+.container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 40px 20px;
+}
+
+/* ส่วน Header และโลโก้ */
+header .logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: #5d1a1a; /* สีแดงเลือดหมู */
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+
+/* หัวข้อหลักกลางหน้าจอ */
+.main-title {
+    text-align: center;
+    color: #5d1a1a;
+    font-size: 2.8rem;
+    margin-top: 20px;
+    margin-bottom: 40px;
+}
+
+/* การ์ดสีเหลืองนวลขอบแดง */
+.inventory-card {
+    background-color: #fdf2d0; 
+    border: 5px solid #5d1a1a;
+    border-radius: 30px;
+    padding: 10px 0;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+}
+
+.item-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+/* แถวรายการแต่ละรายการ */
+.item-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 18px 40px;
+    border-bottom: 2px solid #e9dfbc;
+    min-height: 40px;
+}
+
+/* สลับสีแถวให้ดูง่าย */
+.item-row:nth-child(even) {
+    background-color: #faecc0;
+}
+
+.item-text {
+    font-size: 1.3rem;
+    color: #333;
+}
+
+/* ปุ่ม "รับ" สีเขียว */
+.btn-green {
+    background-color: #008f39;
+    color: white;
+    text-decoration: none; /* เอาเส้นใต้ลิงก์ออก */
+    padding: 8px 25px;
+    border-radius: 12px;
+    font-weight: bold;
+    transition: all 0.2s ease;
+}
+
+.btn-green:hover {
+    background-color: #006b2a;
+    transform: scale(1.08);
+}
+
+/* สำหรับแถวว่างที่ยังไม่มีข้อมูล */
+.item-row.empty {
+    height: 65px;
+}

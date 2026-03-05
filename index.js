@@ -82,6 +82,10 @@ app.post("/login", (req, res) => {
     });
 });
 
+app.get("/receive", (req, res) => { 
+    res.render("receive_stock");
+});
+
 app.post("/add", (req, res) => {
     const {username, password} = req.body;
 
