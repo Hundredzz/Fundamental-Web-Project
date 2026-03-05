@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>mainpage</title>
+    <style>
+        body {
+            margin: 0;
+            background: url(/img/bg.png) repeat, #3B010B;
+            overflow-x: hidden;
+        }
+        input {
+            width: 50%;
+            padding: 1%;
+            margin: 2%;
+            background-color: #ffffff;
+            border: 1px solid #ffffff;
+            color: #3B010B;
+            border-radius: 10px;
+            font-size: 16px;
+            outline: none;
+        }
+        input::placeholder {
+            color: #3B010B;
+            opacity: 0.7;
+        }
+        input::-webkit-input-placeholder {
+            color: #3B010B;
+        }
+        input:-webkit-autofill,
+        input:-webkit-autofill:hover,
+        input:-webkit-autofill:focus {
+            -webkit-text-fill-color: #3B010B !important;
+            box-shadow: 0 0 0px 1000px #3B010B inset;
+            transition: all 0.3s ease-in-out;
+        }
+
+        input:hover {
+            border-color: #ffffff;
+            background-color: #ffffff;
+            cursor: pointer;
+        }
+        input:focus {
+            border-color: #ffffff;
+            background-color: #ffffff;
+            box-shadow: 0 0 8px #3B010B;
+            transform: scale(1.02);
+        }
+        h5 {
+            font-size: 18px;
+            color: black;
+        }
+        p {
+            font-size: 14px;
+            color: black;
+        }
+        h1 {
+            color: black;
+            margin: 5%;
+        }
+        .big {
+            width: 100vw;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .small {
+            width: 30vw;
+            padding: 1%;
+            padding-left: 3%;
+            margin: 1%;
+            background-color: #ffffff;
+            color: #3B010B;
+            border: 1px solid #f2e5c6;
+            border-radius: 10px;
+            text-align: left;
+            box-shadow: 0 0 8px #3B010B;
+        }
+        .search {
+            width: 100vw;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        .search-icon {
+            position: absolute;
+            right: 26vw;
+            top: 40%;
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+        .bell-icon {
+            position: absolute;
+            right: 2.5vw;
+            top: 40%;
+            width: 30px;
+            height: 30px;
+            cursor: pointer;
+        }
+        .add-icon {
+            position: absolute;
+            right: 2.5vw;
+            bottom: 5%;
+            width: 50px;
+            height: 50px;
+            cursor: pointer;
+        }
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.4);
+            z-index: 1;
+        }
+        .fab-menu {
+            display: none;
+            position: fixed;
+            right: 3.5vw;
+            bottom: 15%;
+            z-index: 2;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 15px;
+        }
+        .menu-item {
+            display: flex;
+            width: 100%;
+            align-items: center;
+            cursor: pointer;
+            background: white;
+            padding: 5px 10px;
+            margin-bottom: 5%;
+            border-radius: 10px;
+            font-size: 14px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .add-icon-container {
+            position: fixed;
+            right: 1vw;
+            bottom: 5%;
+            z-index: 3;
+        }
+        .menu-open #fab-menu,
+        .menu-open #overlay {
+            display: flex;
+        }
+        @media screen and (max-width: 600px) {
+            .big {
+                width: 100vw;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+            }
+            .small {
+                width: 50vw;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="search">
+        <input type="text" placeholder="ค้นหาสินค้า">
+        <img src="/img/search.svg" class="search-icon" alt="search">
+        <a href="..."><img src="/img/bell.svg" class="bell-icon"></a>
+    </div>
+    <div class="big">
+        <div class="small">
+            <h5>สินค้าทั้งหมด</h5>
+            <h1>รายการ</h1>
+            <p>อัปเดตล่าสุด :</p>
+        </div>
+
+        <div class="small">
+            <h5>สต๊อกคงเหลือ</h5>
+            <h1>ชิ้น</h1>
+            <p>... ชิ้น จากเมื่อวาน</p>
+        </div>
+    </div>
+    <div class="big">
+        <div class="small">
+            <h5>ใกล้หมดอายุ (30) </h5>
+            <h1>รายการ</h1>
+            <p>ต้องดำเนินการเร่งด่วน</p>
+        </div>
+
+        <div class="small">
+            <h5>หมดอายุแล้ว</h5>
+            <h1>รายการ</h1>
+            <p>ต้องตรวจสอบและแบกออกจากคลัง</p>
+        </div>
+    </div>
+
+    <div id="overlay" class="overlay" onclick="toggleMenu()"></div>
+
+    <div id="fab-menu" class="fab-menu">
+        <div class="menu-item">
+            <img src="/img/plus.svg" style="width: 24px; margin-right: 10%";>
+            <p>รับสินค้าเข้า</p>
+        </div>
+        <div class="menu-item">
+            <img src="/img/minus.svg" style="width: 24px; margin-right: 10%">
+            <p>เบิกสินค้าออก</p>
+        </div>
+        <div class="menu-item">
+            <img src="/img/scan.svg" style="width: 24px; margin-right: 10%">
+            <p>สแกนบาร์โค้ด</p>
+        </div>
+    </div>
+
+    <div class="add-icon-container" onclick="toggleMenu()">
+        <img src="/img/add.svg" id="main-icon" class="add-icon">
+    </div>
+
+    <script>
+        function toggleMenu() {
+            const body = document.body;
+            const mainIcon = document.getElementById('main-icon');
+            body.classList.toggle('menu-open');
+            if (body.classList.contains('menu-open')) {
+                mainIcon.src = "/img/add_45.svg";
+            } else {
+                mainIcon.src = "/img/add.svg";
+            }
+        }
+    </script>
+</body>
+
+</html>

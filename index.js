@@ -107,7 +107,9 @@ app.post("/add", (req, res) => {
         });
     });
 });
-
+app.get("/mainpage", (req, res) => {
+    res.render("mainpage");
+});
 app.listen(port, () => {
     console.log(`Server is running on http://localhost:${port}`);
 });
