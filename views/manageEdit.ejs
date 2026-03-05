@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>แก้ไขผู้ใช้งาน</title>
+    <link rel="stylesheet" href="/css/table.css">
+    <link rel="stylesheet" href="/css/search.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .content {
+            padding: 40px;
+            width: 50%;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        h1 {
+            margin: 0;
+            color: #75162D;
+            font-size: 24px;
+            align-self: flex-start;
+        }
+        .row-group {
+            display: flex;
+            gap: 15px;
+            width: 100%;
+        }
+
+        .input-id { 
+            flex: 1; 
+        } 
+        .input-user { 
+            flex: 2; 
+        } 
+        .full-width {
+            width: 80%; 
+        }
+        .half-width {
+            flex: 1; 
+        }
+
+        .button-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 10px;
+        }
+        .bt-popup-no {
+            background: #FFFFFF;
+            color: #75162D;
+            border: 2px solid #75162D;
+            width: 100%;
+        }
+        .bt-popup-yes {
+            background: #75162D;
+            color: #F2D9A0;
+            border: none;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="content">
+        <h1>แก้ไขผู้ใช้</h1>
+        
+        <div class="row-group">
+            <input type="text" class="input-id" placeholder="รหัสพนักงาน">
+            <input type="text" class="input-user" placeholder="ชื่อผู้ใช้">
+        </div>
+
+        <input type="text" class="full-width" placeholder="ชื่อ-นามสกุล">
+
+        <div class="row-group">
+            <select class="half-width">
+                <option value="">ตำแหน่งงาน</option>
+                <option value="รับสินค้า">รับสินค้า</option>
+                <option value="จ่ายสินค้า">จ่ายสินค้า</option>
+            </select>
+            <select class="half-width">
+                <option value="">บทบาท</option>
+                <option value="Admin">Admin</option>
+                <option value="User">User</option>
+            </select>
+        </div>
+
+        <div class="button-group">
+            <button class="bt-popup-no">ยกเลิก</button>
+            <button class="bt-popup-yes">บันทึกข้อมูล</button>
+        </div>
+    </div>
+
+</body>
+</html>

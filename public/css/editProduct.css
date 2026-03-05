@@ -1,0 +1,162 @@
+:root {
+    --color-cherry: #75162E;
+    --color-cherry-dark: #2d040e;
+    --color-cream-soft: #eee4cc;
+    --color-cream: #F2E5C5;
+    --color-gold-muted: #F2D9A3;
+}
+
+body {
+    background-color: var(--color-cream-soft);
+    color: var(--color-cherry);
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.image-placeholder {
+    width: 45%;
+    height: 25%;
+    border-radius: 12px;
+    min-height: 350px;
+    overflow: hidden; /* Ensures the uploaded image doesn't spill over the rounded corners */
+}
+
+/* --- NEW: Image Upload Label & Preview Styles --- */
+#image-upload-label {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+    min-height: 350px;
+    background-color: #d9d9d9; /* Matches your original gray */
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+#image-upload-label:hover {
+    background-color: #cccccc; /* Slightly darker on hover */
+}
+
+#upload-content-placeholder {
+    text-align: center;
+    color: var(--color-cherry); /* Using your cherry color for the text */
+    font-size: 1.1rem;
+    font-weight: bold;
+}
+
+#upload-icon {
+    font-size: 3rem;
+    display: block;
+    margin-bottom: 10px;
+}
+
+#image-preview {
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* Keeps the image perfectly scaled inside the box */
+}
+
+/* Main Container */
+.main-content {
+    /* Dark red background */
+    width: 100%;
+    margin-top: 50px !important; 
+    max-width: 1100px;
+    border-radius: 4px;
+    padding: 30px 40px;
+    position: relative;
+}
+
+.page-title {
+    text-align: center;
+    font-size: 2rem;
+    margin-bottom: 30px;
+    color: var(--color-cherry);
+}
+
+/* Content Layout */
+.content-layout {
+    background-color: var(--color-cherry);
+    display: flex;
+    gap: 30px;
+    justify-content: space-around;
+    padding: 30px;
+    border-radius: 12px;
+    align-items: center;
+}
+
+
+/* Right side: Form Card */
+.form-card {
+    color: var(--color-gold-muted);
+    width: 55%;
+    
+    
+    position: relative;
+}
+
+.form-group {
+    display: flex;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+input, select{
+    padding: 7px;
+    font-size: 1rem;
+    flex: 1;
+}
+
+.form-group label {
+    width: 115px;
+    font-weight: 500;
+    font-size: 1.1rem;
+    text-align: right;
+    padding-right: 0.5%;
+}
+
+#code{
+    border: none;
+    cursor:default;
+}
+#code:hover{
+    border: none;
+}
+#code:focus{
+   box-shadow: none;
+    transform: scale(1);
+}
+
+/* Submit Button */
+.submit-btn-container {
+    display: flex;
+    justify-content: center;
+    margin-top: 25px;
+    position: absolute;
+    bottom: -20px;
+    /* Overlaps the bottom edge like in the image */
+    left: 0;
+    width: 100%;
+}
+
+.submit-btn {
+    background-color: #009922;
+    /* Green */
+    color: white;
+    border: none;
+    padding: 10px 30px;
+    font-size: 1.1rem;
+    font-weight: bold;
+    border-radius: 8px;
+    cursor: pointer;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    transition: background-color 0.2s;
+}
+
+.submit-btn:hover {
+    background-color: #007a1b;
+}

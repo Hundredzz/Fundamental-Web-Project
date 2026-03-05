@@ -1,0 +1,75 @@
+.popup-overlay {
+    display: none; /* Hidden by default */
+    position: fixed; 
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 101vh;
+    background-color: rgba(0, 0, 0, 0.6); /* Dark semi-transparent background */
+    z-index: 1; /* Forces it to the absolute top of the page */
+    
+    /* Centers the white box in the middle of the screen */
+    justify-content: center;
+    align-items: center;
+}
+
+/* The Pop-up Box Itself */
+.popup-content {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background-color: #F2E5C5;
+    border-radius: 10px;
+    width: 50%;
+    height: 60vh;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+}
+
+
+.popup-overlay.active {
+    display: flex; 
+}
+
+.bt-con-popup {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.bt-popup-yes {
+    display: flex;
+    width: fit-content;
+    margin: 1%;
+    padding: 15px;
+    background: #75162D;
+    color: #F2D9A0;
+    border: 1px solid #75162D;
+    border-radius: 5px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    align-items: center;
+    justify-content: center;
+    width: 40%;
+}
+
+.bt-popup-no {
+    display: flex;
+    width: fit-content;
+    margin: 1%;
+    padding: 15px;
+    background-color: #F2D9A0;
+    color: #75162D;
+    border: 1px solid #75162D;
+    border-radius: 5px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    align-items: center;
+    justify-content: center;
+    width: 40%;
+}

@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <%- include('head') %>
+        <title>Product Page</title>
+        <link rel="stylesheet" href="/css/search.css">
+        <link rel="stylesheet" href="/css/button.css">
+        <link rel="stylesheet" href="/css/showProduct.css">
+        <link rel="stylesheet"
+            href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&icon_names=search" />
+        <script src="/script/productPopUp.js" defer></script>
+        <script src="/script/productHandling.js" defer></script>
+        <script src="/script/deleteProduct.js" defer></script>
+</head>
+
+<body>
+    <%- include('nav') %>
+        <div id="main-content" class="main-content">
+            <div class="btn-container">
+                <div>
+                    <div class="search">
+                        <input type="text" name="search" placeholder="ค้นหาสินค้า" id="search-text"
+                            onkeydown="if(event.key === 'Enter') changePage(this)">
+                        <button type="submit" onclick="changePage(this)" class="style-button"><span
+                                class="material-symbols-outlined search-icon">search</span><span>ค้นหา</span></button>
+                    </div>
+                    <div class="search">
+                        <select id="category-select" onchange="changePage(this)">
+                            <option value="">ประเภทสินค้า</option>
+                            <% categories.forEach(category=> { %>
+                                <option value="<%= category.category_name %>">
+                                    <%= category.category_name %>
+                                </option>
+                                <% }) %>
+                        </select>
+
+                        <select id="brand-select" onchange="changePage(this)">
+                            <option value="">แบรนด์สินค้า</option>
+                            <% brands.forEach(brand=> { %>
+                                <option value="<%= brand.brand_name %>">
+                                    <%= brand.brand_name %>
+                                </option>
+                                <% }) %>
+                        </select>
+                    </div>
+                </div>
+                <div class="styleButton">
+                    <button onclick="window.location.href='/add-peoduct'" class="style-button">+ เพื่มสินค้า</button>
+                </div>
+            </div>
+            <div id="product-sect">
+                <%- include('productSection', { data: data, currentPage: currentPage, totalPages: totalPages }) %>
+            </div>
+        </div>
+        <%- include('productPopup') %>
+
+</body>
+
+</html>
