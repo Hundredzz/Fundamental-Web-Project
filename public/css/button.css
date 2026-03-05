@@ -1,0 +1,26 @@
+button {
+    display: flex;
+    width: fit-content;
+    margin: 1%;
+    padding: 15px;
+    background: linear-gradient(45deg, #f2e5c6, #F2D9A0);
+    color: #75162D;
+    border: 1px solid #F2D9A0;
+    border-radius: 5px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    align-items: center;
+    justify-content: center;
+}
+
+button:hover {
+    border-color: #3B010B;
+    transform: translateY(-3px) scale(1.03);
+}
+
+button:active {
+    transform: translateY(1px) scale(0.98);
+    box-shadow: 0 0 10px #3B010B;
+}

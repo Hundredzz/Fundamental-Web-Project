@@ -19,8 +19,11 @@
   },
   "homepage": "https://github.com/Hundredzz/Fundamental-Web-Project#readme",
   "dependencies": {
+    "cookie-parser": "^1.4.7",
     "ejs": "^4.0.1",
     "express": "^5.2.1",
+    "express-session": "^1.19.0",
+    "multer": "^2.1.1",
     "sqlite3": "^5.1.7"
   }
 }

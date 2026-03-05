@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>Edit Product</title>
+    <link rel="stylesheet" href="/css/search.css">
+    <link rel="stylesheet" href="/css/editProduct.css">
+    <%- include('head') %>
+</head>
+
+<body>
+    <%- include('nav') %>
+        <div id="main-content" class="main-content">
+            <h2 class="page-title">
+                <%= title %>
+            </h2>
+
+            <div class="content-layout">
+                <form action="/update-product" method="POST">
+                    <div class="image-placeholder">
+                        <label for="product-image-input" id="image-upload-label">
+                            <div id="upload-content-placeholder">
+                                <span id="upload-icon">📷</span>
+                                คลิกเพื่ออัปโหลดรูปภาพ
+                            </div>
+                            <img id="image-preview" src="#" alt="ตัวอย่างรูปภาพ" style="display: none;" />
+                        </label>
+                        <input type="file" id="product-image-input" accept="image/*" style="display: none;" />
+                    </div>
+                    <div class="form-card">
+
+
+                        <input type="hidden" name="image_path" id="final-image-path-input">
+
+                        <div class="form-group">
+                            <label for="code">รหัสสินค้า :</label>
+                            <input type="text" id="code" name="code" value="<%= product.product_id %>" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="name">ชื่อสินค้า :</label>
+                            <input type="text" id="name" name="name" value="<%= product.product_name %>" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="brand">แบรนด์ :</label>
+                            <select name="brand" id="brand" required>
+                                <option value="" disabled selected>เลือกแบรนด์</option>
+                                <% brands.forEach(brand=> { %>
+                                    <option value="<%= brand.brand_id %>" <%=product.brand_name===brand.brand_name
+                                        ? 'selected' : '' %>>
+                                        <%= brand.brand_name %>
+                                    </option>
+                                    <% }) %>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="category">ประเภทสินค้า :</label>
+                            <select name="category" id="category" required>
+                                <option value="" disabled selected>เลือกประเภท</option>
+                                <% categories.forEach(category=> { %>
+                                    <option value="<%= category.category_id %>"
+                                        <%=product.category_name===category.category_name ? 'selected' : '' %>>
+                                        <%= category.category_name %>
+                                    </option>
+                                    <% }) %>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="supplier">ซัพพลายเออร์ :</label> <select name="supplier" id="supplier" required>
+                                <option value="" disabled selected>เลือกซัพพลายเออร์</option>
+                                <% suppliers.forEach(supplier=> { %>
+                                    <option value="<%= supplier.supplier_id %>"
+                                        <%=product.supplier_name===supplier.supplier_name ? 'selected' : '' %>>
+                                        <%= supplier.supplier_name %>
+                                    </option>
+                                    <% }) %>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="net_content">ปริมาณสุทธิ :</label>
+                            <input type="text" id="net_content" name="net_content" value="<%= product.net_content %>">
+                        </div>
+                        <div class="form-group">
+                            <label for="cost_price">ราคาทุน :</label>
+                            <input type="number" step="0.01" id="cost_price" name="cost_price"
+                                value="<%= product.cost_price %>">
+                        </div>
+                        <div class="form-group">
+                            <label for="selling_price">ราคาขาย :</label>
+                            <input type="number" step="0.01" id="selling_price" name="selling_price"
+                                value="<%= product.selling_price %>">
+                        </div>
+                        <div class="form-group">
+                            <label for="fda_no">เลขที่จดแจ้ง :</label>
+                            <input type="text" id="fda_no" name="fda_no" value="<%= product.fda_number %>">
+                        </div>
+
+                        <div class="submit-btn-container">
+                            <button type="submit" class="submit-btn">บันทึก</button>
+                        </div>
+
+                    </div>
+                </form>
+            </div>
+
+        </div>
+
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                const fileInput = document.getElementById('product-image-input');
+                const imagePreview = document.getElementById('image-preview');
+                const placeholderContent = document.getElementById('upload-content-placeholder');
+
+                fileInput.addEventListener('change', function (event) {
+                    const file = event.target.files[0];
+
+                    if (file) {
+                        if (!file.type.startsWith('image/')) {
+                            alert('โปรดเลือกไฟล์รูปภาพเท่านั้น');
+                            fileInput.value = '';
+                            return;
+                        }
+
+                        // Just show the preview! No background uploading needed anymore.
+                        const reader = new FileReader();
+                        reader.onload = function (e) {
+                            imagePreview.src = e.target.result;
+                            imagePreview.style.display = 'block';
+                            placeholderContent.style.display = 'none';
+                        }
+                        reader.readAsDataURL(file);
+                    }
+                });
+            });
+        </script>
+</body>
+
+</html>
