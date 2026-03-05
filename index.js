@@ -6,6 +6,8 @@ const sqlite3 = require('sqlite3').verbose();
 const session = require('express-session');
 const cookieParser = require("cookie-parser");
 const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
 
 const app = express();
 
@@ -32,7 +34,21 @@ const storageConfig = multer.diskStorage({
         cb(null, path.join(__dirname, 'public/img/product_image'));
     },
     filename: function (req, file, cb) {
-        cb(null, Date.now() + path.extname(file.originalname));
+        const d = new Date();
+        
+        // Get the date parts and ensure they are 2 digits (e.g., '03' instead of '3')
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0'); // Months are 0-11, so we add 1
+        const date = String(d.getDate()).padStart(2, '0');
+        
+        const milli = String(d.getMilliseconds()).padStart(3, '0'); // Milliseconds are 3 digits
+
+        // Combine them into your custom prefix!
+        // Format: YYYYMMDD_HHMMSS_mmm
+        const prefix = `${year}${month}${date}_${milli}`;
+
+        // Add the original file extension at the end (e.g., .jpg, .png)
+        cb(null, prefix + '_' + file.originalname);
     }
 })
 
@@ -161,7 +177,69 @@ app.get("/undefind", (req, res) => {
     res.render("undefind");
 });
 app.get("/manage", (req, res) => {
-    res.render("manage");
+    const id = req.query.id || '';
+    const username = req.query.username || '';
+    const name = req.query.name || '';
+    const job_title = req.query.job_title || '';
+    const role = req.query.role || '';
+
+    // 2. Base query using WHERE 1=1
+    let sql = `
+        SELECT 
+            u.username, 
+            u.role, 
+            u.status,
+            e.employee_id, 
+            e.first_name, 
+            e.last_name, 
+            e.job_title
+        FROM Users u
+        LEFT JOIN Employees e ON u.employee_id = e.employee_id
+        WHERE 1=1
+    `;
+
+    let queryParams = [];
+
+    // 3. Dynamically add filters if the user provided them
+    if (id.trim() !== '') {
+        sql += ` AND e.employee_id LIKE ?`;
+        queryParams.push(`%${id}%`); // Use % for partial matches
+    }
+    
+    if (username.trim() !== '') {
+        sql += ` AND u.username LIKE ?`;
+        queryParams.push(`%${username}%`);
+    }
+    
+    if (name.trim() !== '') {
+        // Search both first and last name for the text
+        sql += ` AND (e.first_name LIKE ? OR e.last_name LIKE ?)`;
+        queryParams.push(`%${name}%`, `%${name}%`);
+    }
+    
+    if (job_title.trim() !== '') {
+        sql += ` AND e.job_title = ?`; // Exact match for dropdowns
+        queryParams.push(job_title);
+    }
+    
+    if (role.trim() !== '') {
+        sql += ` AND u.role = ?`; // Exact match for dropdowns
+        queryParams.push(role);
+    }
+
+    // 4. Add the Order By to the end
+    sql += ` ORDER BY e.employee_id ASC`;
+
+    // 5. Execute the query
+    db.all(sql, queryParams, (err, rows) => {
+        if (err) {
+            console.error("Database Error:", err.message);
+            return res.status(500).send("เกิดข้อผิดพลาดในการดึงข้อมูลผู้ใช้งาน");
+        }
+
+        // 6. Send the retrieved data to the EJS template
+        res.render("manage", { users: rows });
+    });
 });
 app.get("/report", (req, res) => {
     res.render("report");
@@ -297,11 +375,59 @@ app.get('/edit-product/:id', (req, res) => {
     fetch(`http://localhost:${port}/api/product/${req.params.id}`)
         .then(response => response.json())
         .then(data => {
-            res.render('editProduct', { product: data, title: 'แก้ไขสินค้า', brands: global_brands, categories: global_categories, suppliers:global_supplier });
+            res.render('editProduct', { product: data, title: 'แก้ไขสินค้า', brands: global_brands, categories: global_categories, suppliers:global_supplier, url_path : "/update-product"});
         })
         .catch(error => {
             console.error('Error loading page:', error);
         })
+});
+
+app.get('/add-peoduct', (req, res) => {
+    db.get(`SELECT product_id FROM Products WHERE product_id LIKE 'B%' ORDER BY product_id DESC LIMIT 1`, [], (err, row) => {
+        if (err) {
+            console.error("Database Error:", err);
+            return res.status(500).send("เกิดข้อผิดพลาดในการสร้างรหัสสินค้า");
+        }
+
+        let newProductId = "B000001"; // Default starting ID if the database is completely empty
+
+        // 2. If we found a previous ID (like "B0096286"), calculate the next one
+        if (row && row.product_id) {
+            // Cut off the 'B' (leaves us with "0096286")
+            const numberString = row.product_id.substring(1);
+            
+            // Convert to a real number and add 1 (becomes 96287)
+            const nextNumber = parseInt(numberString, 10) + 1;
+            
+            // Format it back to 6 digits by padding with zeros, then stick the 'B' back on
+            newProductId = "B" + String(nextNumber).padStart(6, '0');
+        }
+
+        // 3. Create a dummy product object so the EJS file doesn't crash 
+        // when it tries to read product.product_name, etc.
+        const newProductTemplate = {
+            product_id: newProductId, // <-- Here is our auto-generated ID!
+            product_name: "",
+            brand_name: "",
+            category_name: "",
+            supplier_name: "",
+            net_content: "",
+            cost_price: "",
+            selling_price: "",
+            fda_number: "",
+            img_path: null
+        };
+
+        // 4. Render the page with the prepopulated object
+        res.render('editProduct', { 
+            product: newProductTemplate, 
+            title: 'เพิ่มสินค้า', 
+            brands: global_brands, 
+            categories: global_categories, 
+            suppliers: global_supplier,
+            url_path : "/add-product-data"
+        });
+    });
 });
 
 // --- 2. THE PAGINATION ROUTE ---
@@ -400,10 +526,78 @@ app.get("/api/product/:id", (req, res) => {
 
 app.post("/update-product", uploader.single('product_image'), (req, res) => {
     
-    // 1. Extract all the text fields from the form (req.body)
-    // The names here exactly match the name="..." attributes in your HTML
     const { 
-        code,           // product_id
+        code, name, brand, category, supplier, 
+        net_content, cost_price, selling_price, fda_no 
+    } = req.body;
+
+    // SCENARIO A: They uploaded a NEW image
+    if (req.file) {
+        const newImagePath = req.file.filename;
+
+        // 1. First, find out what the OLD image was
+        db.get(`SELECT img_path FROM Products WHERE product_id = ?`, [code], (err, row) => {
+            if (err) {
+                console.error("Database Error:", err);
+                return res.status(500).send("เกิดข้อผิดพลาดในการดึงข้อมูลรูปภาพเก่า");
+            }
+
+            // 2. If an old image exists, delete it from the folder!
+            if (row && row.img_path) {
+                const oldImageFullPath = path.join(__dirname, 'public/img/product_image', row.img_path);
+                
+                // fs.unlink deletes the file. 
+                fs.unlink(oldImageFullPath, (unlinkErr) => {
+                    // We ignore 'ENOENT' (Error NO ENTry) which just means the file was already missing
+                    if (unlinkErr && unlinkErr.code !== 'ENOENT') {
+                        console.error("Failed to delete old image:", unlinkErr);
+                    } else {
+                        console.log("Old image deleted successfully.");
+                    }
+                });
+            }
+
+            // 3. Now, update the database with the NEW image path
+            const sql = `
+                UPDATE Products 
+                SET 
+                    product_name = ?, brand_id = ?, category_id = ?, supplier_id = ?, 
+                    net_content = ?, cost_price = ?, selling_price = ?, fda_number = ?, 
+                    img_path = ? 
+                WHERE product_id = ?
+            `;
+            const params = [name, brand, category, supplier, net_content, cost_price, selling_price, fda_no, newImagePath, code];
+
+            db.run(sql, params, function(err) {
+                if (err) return res.status(500).send("เกิดข้อผิดพลาดในการบันทึกข้อมูลสินค้า");
+                console.log(`Product ${code} updated with new image!`);
+                res.redirect("/product"); 
+            });
+        });
+
+    } else {
+        // SCENARIO B: They did NOT upload a new image.
+        // Keep the existing code you already had for this part!
+        const sql = `
+            UPDATE Products 
+            SET 
+                product_name = ?, brand_id = ?, category_id = ?, supplier_id = ?, 
+                net_content = ?, cost_price = ?, selling_price = ?, fda_number = ?
+            WHERE product_id = ?
+        `;
+        const params = [name, brand, category, supplier, net_content, cost_price, selling_price, fda_no, code];
+
+        db.run(sql, params, function(err) {
+            if (err) return res.status(500).send("เกิดข้อผิดพลาดในการบันทึกข้อมูลสินค้า");
+            console.log(`Product ${code} updated (no image change).`);
+            res.redirect("/product"); 
+        });
+    }
+});
+
+app.post("/add-product-data", uploader.single('product_image'), (req, res) => {
+    const { 
+        code,           // product_id (e.g., B000001)
         name,           // product_name
         brand,          // brand_id
         category,       // category_id
@@ -414,66 +608,97 @@ app.post("/update-product", uploader.single('product_image'), (req, res) => {
         fda_no 
     } = req.body;
 
-    let sql;
-    let params;
+    // 2. Handle the image path
+    // If the user uploaded an image, save the new filename. If they skipped it, set it to null.
+    const imagePath = req.file ? req.file.filename : null;
 
-    // 2. Check if a new file was uploaded
-    if (req.file) {
-        // SCENARIO A: They uploaded a NEW image.
-        // We include 'img_path = ?' in the SQL query to update the image.
-        const newImagePath = req.file.filename;
+    // 3. Prepare the SQL INSERT statement
+    const sql = `
+        INSERT INTO Products (
+            product_id, 
+            product_name, 
+            brand_id, 
+            category_id, 
+            supplier_id, 
+            net_content, 
+            cost_price, 
+            selling_price, 
+            fda_number, 
+            img_path
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `;
 
-        sql = `
-            UPDATE Products 
-            SET 
-                product_name = ?, 
-                brand_id = ?, 
-                category_id = ?, 
-                supplier_id = ?, 
-                net_content = ?, 
-                cost_price = ?, 
-                selling_price = ?, 
-                fda_number = ?, 
-                img_path = ?       -- <--- Updating the image path
-            WHERE product_id = ?
-        `;
-        
-        // The order of these params MUST match the order of the '?' in the SQL above
-        params = [name, brand, category, supplier, net_content, cost_price, selling_price, fda_no, newImagePath, code];
+    const params = [
+        code, 
+        name, 
+        brand, 
+        category, 
+        supplier, 
+        net_content, 
+        cost_price, 
+        selling_price, 
+        fda_no, 
+        imagePath
+    ];
 
-    } else {
-        // SCENARIO B: They did NOT upload a new image.
-        // We leave 'img_path' completely out of the SQL query so the old image stays safe in the database.
-        
-        sql = `
-            UPDATE Products 
-            SET 
-                product_name = ?, 
-                brand_id = ?, 
-                category_id = ?, 
-                supplier_id = ?, 
-                net_content = ?, 
-                cost_price = ?, 
-                selling_price = ?, 
-                fda_number = ?
-            WHERE product_id = ?
-        `;
-        
-        params = [name, brand, category, supplier, net_content, cost_price, selling_price, fda_no, code];
-    }
-
-    // 3. Execute the database update
+    // 4. Execute the insert
     db.run(sql, params, function(err) {
         if (err) {
-            console.error("Database Update Error:", err.message);
-            return res.status(500).send("เกิดข้อผิดพลาดในการบันทึกข้อมูลสินค้า");
+            console.error("Database Insert Error:", err.message);
+            
+            // If the user somehow submitted a product ID that already exists, SQLite will throw a UNIQUE constraint error
+            if (err.message.includes("UNIQUE constraint failed: Products.product_id")) {
+                return res.status(400).send("เกิดข้อผิดพลาด: รหัสสินค้านี้มีอยู่ในระบบแล้ว");
+            }
+
+            return res.status(500).send("เกิดข้อผิดพลาดในการเพิ่มสินค้าใหม่");
         }
 
-        console.log(`Product ${code} successfully updated!`);
+        console.log(`New product added successfully! ID: ${code}`);
         
-        // 4. Redirect the user after a successful save
-        // Usually, you send them back to the product list or dashboard
-        res.redirect("/product"); 
+        // 5. Redirect back to the main product catalog after successful insertion
+        res.redirect("/product");
+    });
+});
+
+app.delete("/delete-product/:id", (req, res) => {
+    const productId = req.params.id;
+
+    // 1. Get the image path
+    db.get(`SELECT img_path FROM Products WHERE product_id = ?`, [productId], (err, row) => {
+        if (err) return res.status(500).json({ error: "Database Error" });
+
+        // 2. Delete linked data (Lots) so the database doesn't block you
+        db.serialize(() => {
+            
+            // A. Delete Transactions linked to this product's lots
+            db.run(`DELETE FROM Transactions WHERE product_id = ?`, [productId]);
+            
+            // B. Delete the Lots
+            db.run(`DELETE FROM Lots WHERE product_id = ?`, [productId]);
+            
+            // C. Finally, Delete the Product itself
+            db.run(`DELETE FROM Products WHERE product_id = ?`, [productId], function(deleteErr) {
+                if (deleteErr) {
+                    console.error("Delete Error:", deleteErr);
+                    // FIXED: Send an error JSON instead of using res.send for fetch requests
+                    return res.status(500).json({ error: "เกิดข้อผิดพลาดในการลบสินค้า" }); 
+                }
+
+                // D. If the database delete was successful, wipe the image from the folder!
+                if (row && row.img_path) {
+                    const imagePath = path.join(__dirname, 'public/img/product_image', row.img_path);
+                    fs.unlink(imagePath, (unlinkErr) => {
+                        if (unlinkErr && unlinkErr.code !== 'ENOENT') console.error("Failed to delete image:", unlinkErr);
+                    });
+                }
+
+                console.log(`Product ${productId} completely wiped from existence.`);
+                
+                // FIXED: Send a 200 OK status back so the frontend JS knows it's safe to reload the page
+                res.sendStatus(200); 
+            });
+        });
     });
 });
 

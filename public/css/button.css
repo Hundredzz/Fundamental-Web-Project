@@ -1,4 +1,4 @@
-button {
+.style-button {
     display: flex;
     width: fit-content;
     margin: 1%;
@@ -15,12 +15,12 @@ button {
     justify-content: center;
 }
 
-button:hover {
+.style-button:hover {
     border-color: #3B010B;
     transform: translateY(-3px) scale(1.03);
 }
 
-button:active {
+.style-button:active {
     transform: translateY(1px) scale(0.98);
     box-shadow: 0 0 10px #3B010B;
 }
