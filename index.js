@@ -241,6 +241,9 @@ app.get("/manage", (req, res) => {
         res.render("manage", { users: rows });
     });
 });
+app.get("/manageEdit", (req, res) => {
+    res.render("manageEdit");
+});
 app.get("/report", (req, res) => {
     res.render("report");
 });
