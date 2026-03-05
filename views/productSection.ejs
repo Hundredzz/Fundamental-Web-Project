@@ -18,10 +18,11 @@
                     <form action="/edit-product/<%= product.product_id %>">
                         <button type="submit"><img src="/img/edit-icon.svg" alt=""></button>
                     </form>
-                    
-                        <button type="submit" onclick="return confirm('คุณแน่ใจหรือไม่ว่าต้องการลบสินค้านี้?');">
-                            <img src="/img/delete-icon.svg" alt="Delete">
-                        </button>
+                    <form action="">
+                        <button type="button" onclick="deleteProduct('<%= product.product_id %>')">
+        <img src="/img/delete-icon.svg" alt="Delete">
+    </button>
+                    </form> 
                 </div>
             </div>
             <% }) %>

@@ -119,6 +119,17 @@ input, select{
     padding-right: 0.5%;
 }
 
+#code{
+    border: none;
+    cursor:default;
+}
+#code:hover{
+    border: none;
+}
+#code:focus{
+   box-shadow: none;
+    transform: scale(1);
+}
 
 /* Submit Button */
 .submit-btn-container {
