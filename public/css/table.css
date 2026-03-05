@@ -5,10 +5,11 @@ body {
     overflow-x: hidden;
 }
 
+/* Let the container control the width, not the table itself */
 table {
-    width: 80%;
+    width: 100%;
     border-collapse: collapse;
-    margin-top: 20px;
+    margin-top: 0;
 }
 
 th {
@@ -23,7 +24,6 @@ td {
     padding: 10px;
     border: 1px solid #3B010B;
     text-align: center;
-
 }
 
 tr {
@@ -32,4 +32,26 @@ tr {
 
 tr:nth-child(odd) {
     background-color: #F2E5C5;
+}
+
+.table-scroll-container {
+    width: 80%; 
+    max-height: 100%; 
+    overflow-y: auto; 
+    margin-top: 20px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1); 
+    
+    /* Optional: Makes the scrollbar look neat inside the rounded corners */
+    border: 1px solid #3B010B; 
+}
+
+.table-scroll-container thead th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background-color: #75162D; 
+    color: white;
+    
+    /* Trick to fix sticky borders disappearing while scrolling */
+    box-shadow: inset 0 -1px 0 #3B010B, inset 0 1px 0 #3B010B; 
 }

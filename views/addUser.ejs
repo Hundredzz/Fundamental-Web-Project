@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>addUser</title>
+    <link rel="stylesheet" href="/css/nav.css">
+</head>
+<body>
+    <%- include('nav') %>
+    <form action="/addUser" method="POST">
+        <input type="text" name="username" placeholder="Username" required>
+        <input type="password" name="password" placeholder="Password" required>
+        <input type="text" name="role" placeholder="Role" required>
+        <input type="text" name="employee_id" placeholder="Employee ID" required>
+        <input type="text" name="first_name" placeholder="First Name" required>
+        <input type="text" name="last_name" placeholder="Last Name" required>
+        <input type="email" name="email" placeholder="Email" required>
+        <input type="text" name="phone" placeholder="Phone">
+        <input type="text" name="job_title" placeholder="Job Title" required>
+        
+        <button type="submit">Add User</button>
+    </form>
+</body>
+</html>
