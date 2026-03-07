@@ -126,13 +126,54 @@
                 width: 50vw;
             }
         }
+        
+        .noti-dropdown {
+            position: absolute;
+            top: 40px; right: 0;
+            width: 280px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            display: none; /* ซ่อนไว้ก่อน */
+            z-index: 1000;
+            overflow: hidden;
+        }
+        .noti-header { padding: 10px; font-weight: bold; border-bottom: 1px solid #eee; color: #333; }
+        .noti-footer { padding: 8px; text-align: center; background: #f9f9f9; font-size: 13px; }
+        .noti-footer a { color: #75162D; text-decoration: none; }
+        .noti-item {
+            padding: 12px;
+            border-bottom: 1px solid #f0f0f0;
+            font-size: 14px;
+            color: #555;
+            transition: background 0.2s;
+        }
+        .noti-item:hover { background: #fff8f8; }
+        .noti-item.empty { text-align: center; color: #999; }
+        .text-red { color: #d9534f; font-weight: bold; }
+        .badge {
+            position: absolute; top: -5px; right: -5px;
+            background: red; color: white; border-radius: 50%;
+            padding: 2px 6px; font-size: 12px;
+        }
     </style>
 </head>
 
 <body>
     <%- include('nav') %>
-    <div class="notification-bell">
-        <a href="..."><img src="/img/bell.svg" class="bell-icon"></a>
+    <div class="notification-bell" onclick="toggleNotiDropdown(event)">
+        <img src="/img/bell.svg" class="bell-icon" alt="Notification">
+        <span class="badge" id="noti-count" style="display: none;">0</span>
+        
+        <div id="noti-dropdown" class="noti-dropdown">
+            <div class="noti-header">สินค้าใกล้หมดอายุ (30 วัน)</div>
+            <div id="noti-list" class="noti-list">
+                <div class="noti-item empty">กำลังโหลด...</div>
+            </div>
+            <div class="noti-footer">
+                <a href="/expiry">ดูทั้งหมด</a>
+            </div>
+        </div>
     </div>
     <div class="main-content" id="main-content">
         <div class="big">
@@ -196,6 +237,8 @@
         <img src="/img/add.svg" id="main-icon" class="add-icon">
     </div>
 
+    
+
     <script>
         function togglePlusMenu() {
             const body = document.body;
@@ -207,6 +250,73 @@
                 mainIcon.src = "/img/add.svg";
             }
         }
+    // --- ส่วนของระบบแจ้งเตือน ---
+
+        // 1. ฟังก์ชันเปิด/ปิด Dropdown และโหลดข้อมูล 5 รายการล่าสุด
+        async function toggleNotiDropdown(event) {
+            event.stopPropagation(); // กันไม่ให้ปิดทันทีที่คลิก
+            const dropdown = document.getElementById('noti-dropdown');
+            const isVisible = dropdown.style.display === 'block';
+            
+            if (!isVisible) {
+                dropdown.style.display = 'block';
+                await loadLatestNotifications(); // โหลดรายการเมื่อเปิด
+            } else {
+                dropdown.style.display = 'none';
+            }
+        }
+
+        // 2. ฟังก์ชันดึงรายการแจ้งเตือน 5 รายการมาแสดง
+        async function loadLatestNotifications() {
+            try {
+                const res = await fetch('/api/notifications/latest');
+                const data = await res.json();
+                const list = document.getElementById('noti-list');
+                
+                if (data.items && data.items.length > 0) {
+                    list.innerHTML = data.items.map(item => `
+                        <div class="noti-item">
+                            ⚠️ <b>${item.product_name}</b><br>
+                            <small>เหลือ ${item.quantity} ชิ้น - <span class="text-red">หมดอายุ ${item.exp_date}</span></small>
+                        </div>
+                    `).join('');
+                } else {
+                    list.innerHTML = '<div class="noti-item empty">ไม่มีสินค้าใกล้หมดอายุ</div>';
+                }
+            } catch (err) {
+                console.error("Load latest noti failed:", err);
+            }
+        }
+
+        // 3. ฟังก์ชันอัปเดตตัวเลข Badge (เรียกใช้เมื่อโหลดหน้า)
+        async function updateNotificationBadge() {
+            try {
+                const response = await fetch('/api/notifications/count');
+                const data = await response.json();
+                const badge = document.getElementById('noti-count'); // ใช้ ID ให้ตรงกัน
+                
+                if (data.count > 0) {
+                    badge.textContent = data.count;
+                    badge.style.display = 'block';
+                } else {
+                    badge.style.display = 'none';
+                }
+            } catch (err) {
+                console.error('Failed to fetch notification count:', err);
+            }
+        }
+
+        // 4. คลิกที่อื่นในหน้าเว็บเพื่อปิด Dropdown
+        document.addEventListener('click', function(event) {
+            const dropdown = document.getElementById('noti-dropdown');
+            const bell = document.querySelector('.notification-bell');
+            if (!bell.contains(event.target)) {
+                dropdown.style.display = 'none';
+            }
+        });
+
+        // เรียกทำงานทันทีที่โหลดหน้า
+        updateNotificationBadge();
     </script>
 </body>
 
