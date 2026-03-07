@@ -1,4 +1,4 @@
-function changePage(btnElement) {
+function changePage(btnElement, ejsName) {
     const productSection = document.getElementById('product-sect');
     
     // 1. ALWAYS grab the current search and filter values
@@ -18,9 +18,9 @@ function changePage(btnElement) {
     if (btnElement && btnElement.hasAttribute('data-page')) {
         const targetPage = btnElement.getAttribute('data-page');
         // Attach the search params to the pagination URL!
-        fetchUrl = `/fetch-product/${targetPage}?${params.toString()}`; 
+        fetchUrl = `/fetch-product/${targetPage}/${ejsName}?${params.toString()}`; 
     } else {
-        fetchUrl = `/search?${params.toString()}`;
+        fetchUrl = `/search/${ejsName}?${params.toString()}`;
     }
 
     productSection.style.opacity = '0.5';

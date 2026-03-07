@@ -17,23 +17,17 @@
                 <div class="button-container">
                     <button class="detail-btn" data="<%=product.product_id%>"
                         onclick="showDetail(this)">ดูรายละเอียด</button>
-                    <form action="/edit-product/<%= product.product_id %>">
-                        <button type="submit"><img src="/img/edit-icon.svg" alt=""></button>
-                    </form>
-                    <form action="">
-                        <button type="button" onclick="deleteProduct('<%= product.product_id %>')">
-        <img src="/img/delete-icon.svg" alt="Delete">
-    </button>
-                    </form> 
+                    <button class="detail-btn"
+                        onclick="window.location.href = '/receiveForm/<%=product.product_id%>'">รับสินค้านี้</button>
                 </div>
             </div>
             <% }) %>
-                <%- include('pagination', {ejsName :ejsName,currentPage: currentPage, totalPages: totalPages}); %>
+                <%- include('pagination', {ejsName : ejsName ,currentPage: currentPage, totalPages: totalPages}); %>
             <% } else { %>
                             <div class="not-found-message">
                                 <h1>ไม่พบสินค้าที่คุณค้นหา</h1>
                                 <p>กรุณาลองใช้คำค้นหาอื่น</p>
-                                <button onclick="window.location.href='/product'"
+                                <button onclick="window.location.href='/receive_stock'"
                                     class="reset-search-btn">ลองอีกครั้ง</button>
                             </div>
                             <% } %>

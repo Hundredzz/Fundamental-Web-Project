@@ -1,39 +1,33 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <%- include('head') %>
     <title>เบิกสินค้าจำนวน</title>
     <link rel="stylesheet" href="/css/withdraw_layout.css">
     <link rel="stylesheet" href="/css/withdraw_form.css">
-    <link rel="stylesheet" href="/css/nav.css">
+    <link rel="stylesheet" href="/css/search.css">
 </head>
 <body>
     <%- include('nav') %>
-    <div class="main-content">
+    <div class="main-content" id="main-content">
         <h1 class="header-title">เบิกสินค้าออกคลัง</h1>
         <div class="withdraw-card">
-            <div class="image-placeholder"></div>
-            <h3><%= productName %></h3>
-            <form action="/withdraw/confirm" method="POST">
+            <div class="image-placeholder"><img src="/img/product_image/<%=product.img_path%>" alt=""></div>
+            <h3 style="margin-bottom: 0;"><%= product.product_id %></h3>
+            <h3 style="margin-top: 0;"><%= product.product_name %></h3>
+            <form action="/withdraw/confirm/<%=product.product_id%>/<%=branchId%>" method="POST">
                 <div class="qty-control">
-                    <span>จำนวน</span>
-                    <button type="button" onclick="changeQty(-1)">-</button>
-                    <input type="number" name="quantity" id="qty" value="1" readonly>
-                    <button type="button" onclick="changeQty(1)">+</button>
+                    <label>จำนวนที่ต้องการเบิก :</label>
+                    <input type="number" name="quantity" value="1" >
+                </div>
+                <div class="qty-control">
+                    <label>หมายเหตุ :</label>
+                    <input type="text" name="note" >
                 </div>
                 <button type="submit" class="btn-confirm">ยืนยันการเบิก</button>
             </form>
         </div>
     </div>
-
-    <script>
-        function changeQty(val) {
-            let input = document.getElementById('qty');
-            let current = parseInt(input.value);
-            if (current + val >= 1) input.value = current + val;
-        }
-    </script>
-    <script src="/script/nav.js"></script>
+    
 </body>
 </html>
