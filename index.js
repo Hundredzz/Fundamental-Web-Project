@@ -187,11 +187,440 @@ app.get("/dashboard", isAuthenticated, (req, res) => {
 });
 
 app.get("/mainpage", isAuthenticated, (req, res) => res.render("mainpage"));
-app.get("/history", isAuthenticated, (req, res) => res.render("history"));
-app.get("/report", isAuthenticated, (req, res) => res.render("report"));
-app.get("/createReport", isAuthenticated, (req, res) => res.render("createReport"));
+app.get("/history", isAuthenticated, authorizeRoles(["Manager", "Staff"]), (req, res) => {
+    const sql = `
+        SELECT 
+            t.*, 
+            p.product_name,
+            e.first_name, 
+            e.last_name
+        FROM Transactions t
+        LEFT JOIN Products p ON t.product_id = p.product_id
+        LEFT JOIN Employees e ON t.employee_id = e.employee_id
+        ORDER BY t.transaction_date DESC
+    `;
+
+    db.all(sql, [], (err, rows) => {
+        if (err) {
+            console.error("Database Error:", err.message);
+            return res.status(500).send("เกิดข้อผิดพลาดในการดึงข้อมูลประวัติการทำรายการ");
+        }
+
+        // Pass the fetched rows to your history.ejs file as 'transactions'
+        res.render("history", { transactions: rows });
+    });
+});
+app.get("/report", isAuthenticated, authorizeRoles(["Manager"]), (req, res) => {
+    res.render("report")
+});
+app.get("/createReport/:type", isAuthenticated, authorizeRoles(["Manager"]), (req, res) => {
+    res.render("generateReport", {type:req.params.type})
+});
 app.get("/manageEdit", isAuthenticated, (req, res) => res.render("manageEdit"));
 app.get("/undefind", isAuthenticated, (req, res) => res.render("undefind")); // Typo kept for your routing
+
+app.get("/generate-report", isAuthenticated, authorizeRoles(["Manager"]), (req, res) => {
+    // รับค่าพารามิเตอร์ที่ส่งมาจาก Frontend
+    const { reportType, startDate, endDate, productName, brandId, sortBy, expireDays, transType, employee_name, productLeft,lotCode } = req.query;
+
+    let sql = "";
+    let queryParams = [];
+
+    // ==========================================
+    // 1. รายงานความเคลื่อนไหวของสินค้า (Inventory Movement)
+    // ==========================================
+    if (reportType === 'movement') {
+    // หมายเหตุ: สังเกตว่าผมเปลี่ยน t.quantity เป็น t.change_amount ตามโค้ดหน้า EJS ของคุณแล้ว
+    // (หากใน Database ของคุณชื่อคอลัมน์ยังเป็น quantity อยู่ ให้แก้เป็น t.quantity AS change_amount นะครับ)
+    sql = `
+        SELECT 
+            t.transaction_date, 
+            t.transaction_type, 
+            p.product_id, 
+            p.product_name, 
+            t.change_amount, 
+            e.first_name || ' ' || e.last_name AS employee_name
+        FROM Transactions t
+        LEFT JOIN Products p ON t.product_id = p.product_id
+        LEFT JOIN Employees e ON t.employee_id = e.employee_id
+        WHERE 1=1
+    `;
+
+    // 1. กรองตามวันที่
+    if (startDate) { 
+        sql += ` AND t.transaction_date >= ?`; 
+        queryParams.push(`${startDate} 00:00:00`); 
+    }
+    if (endDate) { 
+        sql += ` AND t.transaction_date <= ?`; 
+        queryParams.push(`${endDate} 23:59:59`); 
+    }
+    
+    // 2. กรองตามชื่อหรือรหัสสินค้า
+    if (productName) { 
+        sql += ` AND (p.product_id LIKE ? OR p.product_name LIKE ?)`; 
+        queryParams.push(`%${productName}%`, `%${productName}%`); 
+    }
+
+    // 3. กรองตามประเภทรายการ (รับสินค้า / จ่ายสินค้า)
+    if (transType) {
+        sql += ` AND t.transaction_type = ?`;
+        queryParams.push(type);
+    }
+
+    // 4. กรองตามชื่อ-นามสกุลผู้ทำรายการ
+    if (employee_name) {
+        sql += ` AND Concat(e.first_name, ' ', e.last_name)LIKE ?`;
+        queryParams.push(`%${employee_name.trim()}%`);
+    }
+
+    if (sortBy === 'date_asc') {
+        sql += ` ORDER BY t.transaction_date ASC`;
+    } else if (sortBy === 'type') {
+        sql += ` ORDER BY t.transaction_type ASC, t.transaction_date DESC`;
+    } else if (sortBy === 'product_name') {
+        sql += ` ORDER BY p.product_name ASC, t.transaction_date DESC`;
+    } else if (sortBy === 'amount_desc') {
+        // *หมายเหตุ: ถ้าคอลัมน์ในฐานข้อมูลคุณชื่อ quantity ให้เปลี่ยน t.change_amount เป็น t.quantity แทนนะครับ
+        sql += ` ORDER BY t.change_amount DESC`; 
+    } else if (sortBy === 'amount_asc') {
+        sql += ` ORDER BY t.change_amount ASC`;
+    } else {
+        // ค่าเริ่มต้น ถ้าไม่ได้เลือกอะไรให้เรียงวันที่ใหม่สุดขึ้นก่อน
+        sql += ` ORDER BY t.transaction_date DESC`;
+    }
+    // ==========================================
+    // 2. รายงานสต็อกสินค้าคงเหลือ (Stock Balance)
+    // ==========================================
+    } else if (reportType === 'stock') {
+        sql = `
+        SELECT 
+            p.product_id, 
+            p.product_name, 
+            c.category_name,
+            b.brand_name,
+            COALESCE(SUM(l.quantity), 0) AS total_quantity, 
+            p.cost_price,
+            (COALESCE(SUM(l.quantity), 0) * p.cost_price) AS total_value
+        FROM Products p
+        LEFT JOIN Categories c ON p.category_id = c.category_id
+        LEFT JOIN Brands b ON p.brand_id = b.brand_id
+        LEFT JOIN Lots l ON p.product_id = l.product_id
+        WHERE 1=1
+    `;
+    
+    if (productName) {
+        sql += ` AND (p.product_name LIKE ? OR p.product_id LIKE ?)`;
+        queryParams.push(`%${productName}%`, `%${productName}%`);
+    }
+    if (brandId) {
+        sql += ` AND p.brand_id = ?`;
+        queryParams.push(brandId);
+    }
+
+    
+    
+    sql += ` GROUP BY p.product_id `;
+
+    if (productLeft) {
+        sql += ` HAVING total_quantity <= ?`;
+        queryParams.push(Number(productLeft));
+    }
+
+    // 📌 จัดการเงื่อนไขการเรียงลำดับ (ORDER BY)
+    if (sortBy === 'product_name') {
+        sql += ` ORDER BY p.product_name ASC`;
+    } else if (sortBy === 'brand_name') {
+        sql += ` ORDER BY b.brand_name ASC`;
+    } else if (sortBy === 'category_name') {
+        sql += ` ORDER BY c.category_name ASC`;
+    } else if (sortBy === 'total_quantity_asc') {
+        sql += ` ORDER BY total_quantity ASC`;
+    } else if (sortBy === 'total_quantity_desc') {
+        sql += ` ORDER BY total_quantity DESC`;
+    } else {
+        // ค่าเริ่มต้น
+        sql += ` ORDER BY p.product_id ASC`;
+    }
+    // ==========================================
+    // 3. รายงานสินค้าใกล้หมดอายุ (Expiring Products)
+    // ==========================================
+    } else if (reportType === 'expire') {
+        const days = expireDays || 30;
+        sql = `
+            SELECT 
+                p.product_id, 
+                p.product_name,
+                b.brand_name,
+                l.lot_batch_code,
+                l.quantity, 
+                l.exp_date,
+                CAST(julianday(l.exp_date) - julianday(date('now', 'localtime')) AS INTEGER) AS days_remaining
+            FROM Lots l
+            LEFT JOIN Products p ON l.product_id = p.product_id
+            LEFT JOIN Brands b ON p.brand_id = b.brand_id
+            WHERE l.quantity > 0 
+              AND l.exp_date IS NOT NULL
+              AND CAST(julianday(l.exp_date) - julianday(date('now', 'localtime')) AS INTEGER) <= ?
+        `;
+        queryParams.push(days);
+
+        if (productName) {
+            sql += ` AND (p.product_name LIKE ? OR p.product_id LIKE ?)`;
+            queryParams.push(`%${productName}%`, `%${productName}%`);
+        }
+        // กรองตามแบรนด์
+        if (brandId) {
+            sql += ` AND p.brand_id = ?`;
+            queryParams.push(brandId);
+        }
+        // กรองตามรหัสล็อต
+        if (lotCode) {
+            sql += ` AND l.lot_batch_code LIKE ?`;
+            queryParams.push(`%${lotCode}%`);
+        }
+
+        // จัดการเงื่อนไขการเรียงลำดับ (ตาม value ใน EJS)
+        if (sortBy === 'product_name') {
+            sql += ` ORDER BY p.product_name ASC`;
+        } else if (sortBy === 'brand_name') {
+            sql += ` ORDER BY b.brand_name ASC`;
+        } else if (sortBy === 'exp_date_desc') {
+            sql += ` ORDER BY l.exp_date DESC`;
+        } else if (sortBy === 'exp_date_asc') {
+            sql += ` ORDER BY l.exp_date ASC`;
+        } else {
+            sql += ` ORDER BY p.product_id ASC`;
+        }
+
+    } else {
+        // ถ้าส่ง reportType มาผิดเงื่อนไข
+        return res.status(400).json({ error: "ประเภทรายงานไม่ถูกต้อง" });
+    }
+
+    // ==========================================
+    // ทำการ Execute Query และส่งข้อมูลกลับไปที่ EJS
+    // ==========================================
+    db.all(sql, queryParams, (err, rows) => {
+        if (err) {
+            console.error("Report Database Error:", err.message); // ดู Error ใน Terminal ของ VS Code
+            return res.status(500).json({ error: "เกิดข้อผิดพลาดในการดึงข้อมูลรายงาน" });
+        }
+
+        // Alternative Flow 1: ถ้าหาข้อมูลไม่เจอเลย
+        if (rows.length === 0) {
+            return res.status(404).json({ error: "ไม่พบข้อมูลในช่วงเวลาหรือเงื่อนไขที่เลือก" });
+        }
+
+        // ถ้าสำเร็จ ส่ง Data เป็น JSON กลับไปวาดตารางที่ Frontend
+        res.json(rows);
+    });
+});
+
+app.get("/export-report", isAuthenticated, authorizeRoles(["Manager"]), (req, res) => {
+    // 1. อย่าลืมรับค่า sortBy เพิ่มมาตรงนี้ด้วย
+    const { reportType, startDate, endDate, productName, brandId, sortBy, expireDays, type, employee_name, productLeft, lotCode } = req.query;
+    let queryParams = [];
+    let csvHeader = "";
+
+    if (reportType === 'movement') {
+        // ... (โค้ดรายงานความเคลื่อนไหวเดิมของคุณ) ...
+        sql = `
+        SELECT 
+            t.transaction_date, 
+            t.transaction_type, 
+            p.product_id, 
+            p.product_name, 
+            t.change_amount, 
+            e.first_name || ' ' || e.last_name AS employee_name
+        FROM Transactions t
+        LEFT JOIN Products p ON t.product_id = p.product_id
+        LEFT JOIN Employees e ON t.employee_id = e.employee_id
+        WHERE 1=1
+    `;
+
+    // 1. กรองตามวันที่
+    if (startDate) { 
+        sql += ` AND t.transaction_date >= ?`; 
+        queryParams.push(`${startDate} 00:00:00`); 
+    }
+    if (endDate) { 
+        sql += ` AND t.transaction_date <= ?`; 
+        queryParams.push(`${endDate} 23:59:59`); 
+    }
+    
+    // 2. กรองตามชื่อหรือรหัสสินค้า
+    if (productName) { 
+        sql += ` AND (p.product_id LIKE ? OR p.product_name LIKE ?)`; 
+        queryParams.push(`%${productName}%`, `%${productName}%`); 
+    }
+
+    // 3. กรองตามประเภทรายการ (รับสินค้า / จ่ายสินค้า)
+    if (type && type.trim() !== '') {
+        sql += ` AND t.transaction_type = ?`;
+        queryParams.push(type);
+    }
+
+    // 4. กรองตามชื่อ-นามสกุลผู้ทำรายการ
+    if (employee_name) {
+        sql += ` AND Concat(e.first_name, ' ', e.last_name)LIKE ?`;
+        queryParams.push(`%${employee_name.trim()}%`);
+    }
+
+    if (sortBy === 'date_asc') {
+        sql += ` ORDER BY t.transaction_date ASC`;
+    } else if (sortBy === 'type') {
+        sql += ` ORDER BY t.transaction_type ASC, t.transaction_date DESC`;
+    } else if (sortBy === 'product_name') {
+        sql += ` ORDER BY p.product_name ASC, t.transaction_date DESC`;
+    } else if (sortBy === 'amount_desc') {
+        // *หมายเหตุ: ถ้าคอลัมน์ในฐานข้อมูลคุณชื่อ quantity ให้เปลี่ยน t.change_amount เป็น t.quantity แทนนะครับ
+        sql += ` ORDER BY t.change_amount DESC`; 
+    } else if (sortBy === 'amount_asc') {
+        sql += ` ORDER BY t.change_amount ASC`;
+    } else {
+        // ค่าเริ่มต้น ถ้าไม่ได้เลือกอะไรให้เรียงวันที่ใหม่สุดขึ้นก่อน
+        sql += ` ORDER BY t.transaction_date DESC`;
+    }
+
+    // 📌 (เฉพาะใน Route /export-report) อย่าลืมอัปเดตบรรทัดการสร้าง CSV ด้วยนะครับ
+    csvHeader = "วันที่,ประเภทรายการ,รหัสสินค้า,ชื่อสินค้า,จำนวน,ผู้ทำรายการ\n";
+    
+
+    // ==========================================
+    // 2. แก้ไขรายงานสต็อกสินค้าตรงนี้
+    // ==========================================
+    } else if (reportType === 'stock') {
+        // เพิ่ม LEFT JOIN Brands เข้าไปเผื่อจัดเรียงตามแบรนด์
+        sql = `
+            SELECT 
+                p.product_id, 
+                p.product_name, 
+                c.category_name,
+                b.brand_name,
+                COALESCE(SUM(l.quantity), 0) AS total_quantity, 
+                p.cost_price, 
+                (COALESCE(SUM(l.quantity), 0) * p.cost_price) AS total_value
+            FROM Products p
+            LEFT JOIN Categories c ON p.category_id = c.category_id
+            LEFT JOIN Brands b ON p.brand_id = b.brand_id
+            LEFT JOIN Lots l ON p.product_id = l.product_id
+            WHERE 1=1
+        `;
+        
+        if (productName) {
+            sql += ` AND (p.product_name LIKE ? OR p.product_id LIKE ?)`;
+            queryParams.push(`%${productName}%`, `%${productName}%`);
+        }
+        if (brandId) {
+            sql += ` AND p.brand_id = ?`;
+            queryParams.push(brandId);
+        }
+        
+        sql += ` GROUP BY p.product_id `;
+
+        if (productLeft) {
+        sql += ` HAVING total_quantity <= ?`;
+        queryParams.push(Number(productLeft));
+    }
+
+        // 📌 เพิ่มเงื่อนไขการเรียงลำดับให้เหมือนตอนดึงข้อมูลเป๊ะๆ
+        if (sortBy === 'product_name') {
+            sql += ` ORDER BY p.product_name ASC`;
+        } else if (sortBy === 'brand_name') {
+            sql += ` ORDER BY b.brand_name ASC`;
+        } else if (sortBy === 'category_name') {
+            sql += ` ORDER BY c.category_name ASC`;
+        } else if (sortBy === 'total_quantity_asc') {
+            sql += ` ORDER BY total_quantity ASC`;
+        } else if (sortBy === 'total_quantity_desc') {
+            sql += ` ORDER BY total_quantity DESC`;
+        } else {
+            sql += ` ORDER BY p.product_id ASC`;
+        }
+        
+        csvHeader = "รหัสสินค้า,ชื่อสินค้า,แบรนด์,หมวดหมู่,คงเหลือ (ชิ้น),ต้นทุน/ชิ้น,มูลค่ารวม\n";
+
+    } else if (reportType === 'expire') {
+        // ... (โค้ดรายงานหมดอายุเดิมของคุณ) ...
+        const days = expireDays || 30;
+        sql = `
+            SELECT 
+                p.product_id, 
+                p.product_name,
+                b.brand_name,
+                l.lot_batch_code,
+                l.quantity, 
+                l.exp_date,
+                CAST(julianday(l.exp_date) - julianday(date('now', 'localtime')) AS INTEGER) AS days_remaining
+            FROM Lots l
+            LEFT JOIN Products p ON l.product_id = p.product_id
+            LEFT JOIN Brands b ON p.brand_id = b.brand_id
+            WHERE l.quantity > 0 
+              AND l.exp_date IS NOT NULL
+              AND CAST(julianday(l.exp_date) - julianday(date('now', 'localtime')) AS INTEGER) <= ?
+        `;
+        queryParams.push(days);
+
+        if (productName) {
+            sql += ` AND (p.product_name LIKE ? OR p.product_id LIKE ?)`;
+            queryParams.push(`%${productName}%`, `%${productName}%`);
+        }
+        // กรองตามแบรนด์
+        if (brandId) {
+            sql += ` AND p.brand_id = ?`;
+            queryParams.push(brandId);
+        }
+        // กรองตามรหัสล็อต
+        if (lotCode) {
+            sql += ` AND l.lot_batch_code LIKE ?`;
+            queryParams.push(`%${lotCode}%`);
+        }
+
+        // จัดการเงื่อนไขการเรียงลำดับ (ตาม value ใน EJS)
+        if (sortBy === 'product_name') {
+            sql += ` ORDER BY p.product_name ASC`;
+        } else if (sortBy === 'brand_name') {
+            sql += ` ORDER BY b.brand_name ASC`;
+        } else if (sortBy === 'exp_date_desc') {
+            sql += ` ORDER BY l.exp_date DESC`;
+        } else if (sortBy === 'exp_date_asc') {
+            sql += ` ORDER BY l.exp_date ASC`;
+        } else {
+            sql += ` ORDER BY p.product_id ASC`;
+        }
+        
+        csvHeader = "รหัสสินค้า,ชื่อสินค้า,แบรนด์,รหัสล็อต,จำนวน,วันหมดอายุ,เหลือเวลา (วัน)\n";
+    }
+
+    // ทำการ Query ข้อมูลจาก Database และสร้าง CSV ตามเดิม...
+    db.all(sql, queryParams, (err, rows) => {
+        if (err) {
+            console.error("Export DB Error:", err.message);
+            return res.status(500).send("เกิดข้อผิดพลาดจากฐานข้อมูล: " + err.message);
+        }
+        
+        if (!rows || rows.length === 0) {
+            return res.status(404).send("ไม่พบข้อมูลที่จะ Export");
+        }
+
+        let csvContent = csvHeader;
+        
+        rows.forEach(row => {
+            if (reportType === 'movement') {
+                csvContent += `"${row.transaction_date}","${row.transaction_type}","${row.product_id}","${row.product_name}","${row.change_amount}","${row.employee_name}"\n`;
+            } else if (reportType === 'stock') {
+                csvContent += `"${row.product_id}","${row.product_name}","${row.brand_name}","${row.category_name}","${row.total_quantity}","${row.cost_price}","${row.total_value}"\n`;
+            } else if (reportType === 'expire') {
+                csvContent += `"${row.product_id}","${row.product_name}","${row.brand_name}","${row.lot_id}","${row.quantity}","${row.exp_date}","${row.days_remaining}"\n`;
+            }
+        });
+
+        res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+        res.setHeader('Content-Disposition', `attachment; filename="report_${reportType}.csv"`);
+        res.send('\uFEFF' + csvContent);
+    });
+});
 
 // --- User Management Routes ---
 app.get("/manage", isAuthenticated, authorizeRoles(["Manager"]), (req, res) => {
@@ -217,7 +646,6 @@ app.get("/add-user", isAuthenticated, authorizeRoles(["Manager"]), (req, res) =>
 
 app.post("/add-user-data", isAuthenticated, authorizeRoles(["Manager"]), (req, res) => {
     const { employeeId, userName, password, fname, lname, email, phone, role } = req.body;
-    let dbRole = (role === "ผู้จัดการ") ? "Manager" : "Staff";
     const status = "Active"; 
     const salt = crypto.randomBytes(16).toString("hex");
 
@@ -231,7 +659,7 @@ app.post("/add-user-data", isAuthenticated, authorizeRoles(["Manager"]), (req, r
 
             if (row) {
                 const userSql = `INSERT INTO Users (username, password, role, employee_id, status) VALUES (?, ?, ?, ?, ?)`;
-                db.run(userSql, [userName, passwordToSave, dbRole, employeeId, status], function(userErr) {
+                db.run(userSql, [userName, passwordToSave, role, employeeId, status], function(userErr) {
                     if (userErr) return res.status(400).send("เกิดข้อผิดพลาด: ชื่อผู้ใช้นี้ (Username) มีคนใช้แล้ว");
                     res.redirect("/manage");
                 });
@@ -242,7 +670,7 @@ app.post("/add-user-data", isAuthenticated, authorizeRoles(["Manager"]), (req, r
                         if (empErr) return res.status(400).send("เกิดข้อผิดพลาดในการสร้างข้อมูลพนักงาน");
 
                         const userSql = `INSERT INTO Users (username, password, role, employee_id, status) VALUES (?, ?, ?, ?, ?)`;
-                        db.run(userSql, [userName, passwordToSave, dbRole, employeeId, status], function(userErr) {
+                        db.run(userSql, [userName, passwordToSave, role, employeeId, status], function(userErr) {
                             if (userErr) return res.status(400).send("เกิดข้อผิดพลาด: ชื่อผู้ใช้นี้ (Username) มีคนใช้แล้ว");
                             res.redirect("/manage");
                         });
@@ -276,7 +704,6 @@ app.get('/edit-user/:id', isAuthenticated, authorizeRoles(["Manager"]), (req, re
 app.post('/update-user/:id', isAuthenticated, authorizeRoles(["Manager"]), (req, res) => {
     const targetUserId = req.params.id;
     const { employeeId, userName, password, fname, lname, email, phone, role } = req.body;
-    let dbRole = (role === "ผู้จัดการ") ? "Manager" : "Staff";
 
     db.serialize(() => {
         const updateEmpSql = `UPDATE Employees SET first_name = ?, last_name = ?, email = ?, phone = ? WHERE employee_id = ?`;
@@ -291,14 +718,14 @@ app.post('/update-user/:id', isAuthenticated, authorizeRoles(["Manager"]), (req,
                     const newPasswordToSave = `${salt}:${hash}`;
 
                     const updateUserSql = `UPDATE Users SET username = ?, role = ?, password = ? WHERE user_id = ?`;
-                    db.run(updateUserSql, [userName, dbRole, newPasswordToSave, targetUserId], function(userErr) {
+                    db.run(updateUserSql, [userName, role, newPasswordToSave, targetUserId], function(userErr) {
                         if (userErr) return res.status(400).send("เกิดข้อผิดพลาด: ชื่อผู้ใช้นี้ (Username) ถูกใช้งานแล้ว");
                         res.redirect('/manage');
                     });
                 });
             } else {
                 const updateUserSql = `UPDATE Users SET username = ?, role = ? WHERE user_id = ?`;
-                db.run(updateUserSql, [userName, dbRole, targetUserId], function(userErr) {
+                db.run(updateUserSql, [userName, role, targetUserId], function(userErr) {
                     if (userErr) return res.status(400).send("เกิดข้อผิดพลาด: ชื่อผู้ใช้นี้ (Username) ถูกใช้งานแล้ว");
                     res.redirect('/manage');
                 });
@@ -315,7 +742,7 @@ app.get("/delete-user/:userId", isAuthenticated, authorizeRoles(["Manager"]), (r
     });
 });
 
-app.get("/search-users", isAuthenticated, authorizeRoles(["Manager"]), (req, res) => {
+app.get("/search/users", isAuthenticated, authorizeRoles(["Manager"]), (req, res) => {
     const id = req.query.id || '';
     const username = req.query.username || '';
     const name = req.query.name || '';
@@ -333,9 +760,9 @@ app.get("/search-users", isAuthenticated, authorizeRoles(["Manager"]), (req, res
     if (username.trim() !== '') { sql += ` AND u.username LIKE ?`; queryParams.push(`%${username}%`); }
     if (name.trim() !== '') { sql += ` AND (e.first_name LIKE ? OR e.last_name LIKE ?)`; queryParams.push(`%${name}%`, `%${name}%`); }
     if (role.trim() !== '') {
-        let dbRole = (role === "ผู้จัดการ") ? "Manager" : "Staff";
+        let role = (role === "ผู้จัดการ") ? "Manager" : "Staff";
         sql += ` AND u.role = ?`;
-        queryParams.push(dbRole);
+        queryParams.push(role);
     }
     sql += ` ORDER BY e.employee_id ASC`;
 
@@ -343,6 +770,68 @@ app.get("/search-users", isAuthenticated, authorizeRoles(["Manager"]), (req, res
         if (err) return res.status(500).json({ error: "เกิดข้อผิดพลาดในการดึงข้อมูล" });
         res.render('userSection', { users: rows }, (renderErr, htmlContent) => {
             if (renderErr) return res.status(500).json({ error: "Render error" });
+            res.json({ html: htmlContent });
+        });
+    });
+});
+
+app.get("/search/transactions", isAuthenticated, authorizeRoles(["Manager"]), (req, res) => {
+    // 1. Grab values from the URL query string
+    const productNameSearch = req.query.productName || ''; 
+    const dateSearch = req.query.data || ''; // Maps to <input name="data">
+    const typeSearch = req.query.type || ''; // "รับสินค้า" or "จ่ายสินค้า"
+    const employeeNameSearch = req.query.employee_name || '';
+
+    let sql = `
+        SELECT 
+            t.*, p.product_name, e.first_name, e.last_name
+        FROM Transactions t
+        LEFT JOIN Products p ON t.product_id = p.product_id
+        LEFT JOIN Employees e ON t.employee_id = e.employee_id
+        WHERE 1=1
+    `;
+    
+    let queryParams = [];
+
+    // Search by Product name or ID
+    if (productNameSearch.trim() !== '') {
+        sql += ` AND (p.product_name LIKE ? OR t.product_id LIKE ?)`;
+        queryParams.push(`%${productNameSearch}%`, `%${productNameSearch}%`);
+    }
+
+    // Search by Transaction Type
+    if (typeSearch.trim() !== '') {
+        sql += ` AND t.transaction_type = ?`; // **NOTE: Change t.transaction_type to match your DB column (e.g., t.type)**
+        queryParams.push(typeSearch);
+    }
+
+    // Search by Date 
+    if (dateSearch.trim() !== '') {
+        // Since HTML date pickers send 'YYYY-MM-DD', we use LIKE to match it
+        sql += ` AND t.transaction_date LIKE ?`; // **NOTE: Change t.transaction_date to match your DB column**
+        queryParams.push(`%${dateSearch}%`); 
+    }
+
+    // Search by Employee Name (First Name, Last Name, or Username)
+    if (employeeNameSearch.trim() !== '') {
+        sql += ` AND Concat(e.first_name, ' ', e.last_name)LIKE ?`;
+        queryParams.push(`%${employeeNameSearch.trim()}%`);
+    }
+
+    // Sort newest to oldest
+    sql += ` ORDER BY t.transaction_date DESC`;
+
+    db.all(sql, queryParams, (err, rows) => {
+        if (err) {
+            console.error("Database Error:", err.message); // This will print SQL errors in your VS Code terminal
+            return res.status(500).json({ error: "เกิดข้อผิดพลาดในการค้นหาประวัติ" });
+        }
+
+        res.render('transactionSection', { transactions: rows }, (renderErr, htmlContent) => {
+            if (renderErr) {
+                console.error("Render Error:", renderErr.message); // This will print EJS errors in your terminal
+                return res.status(500).json({ error: "Render error" });
+            }
             res.json({ html: htmlContent });
         });
     });

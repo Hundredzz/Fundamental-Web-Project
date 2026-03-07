@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+
+    <title>สร้างรายงาน (Reports)</title>
+    <link rel="stylesheet" href="/css/table.css">
+    <link rel="stylesheet" href="/css/button.css">
+    <link rel="stylesheet" href="/css/search.css">
+    <link rel="stylesheet" href="/css/history.css">
+    <%- include('head') %>
+        <style>
+            .hidden {
+                display: none !important;
+            }
+
+            .error-msg {
+                color: #d9534f;
+                margin-top: 15px;
+                font-weight: bold;
+                text-align: center;
+                background-color: #f2dede;
+                padding: 10px 20px;
+                border-radius: 4px;
+            }
+        </style>
+</head>
+
+<body>
+    <%- include('nav') %>
+        <div class="main-content" id="main-content">
+            <h1 style="color: #75162D; margin-top: 20px;">
+                <% if(type==='movement' ) { %> รายงานความเคลื่อนไหว
+                    <% } else if(type==='stock' ) { %> รายงานสต็อกสินค้าคงเหลือ
+                        <% } else if(type==='expire' ) { %> รายงานสินค้าใกล้หมดอายุ
+                            <% } %>
+            </h1>
+
+            <form id="reportForm" class="container" onsubmit="event.preventDefault(); generateTable();">
+                <div class="search-container">
+                    <p>ระบุสินค้า :</p>
+                    <input type="text" id="productName" name="productName" placeholder="ชื่อหรือรหัสสินค้า"></input>
+                </div>
+                <% if (type==='movement' ) { %>
+                    <div class="search-container">
+                        <p>ตั้งแต่วันที่:</p>
+                        <input type="date" id="startDate" name="startDate">
+                    </div>
+                    <div class="search-container">
+                        <p>ถึงวันที่:</p>
+                        <input type="date" id="endDate" name="endDate">
+                    </div>
+
+                    <div class="search-container">
+                        <p>ประเภทรายการ :</p>
+                        <select name="transType" id="transType">
+                            <option value="">ทั้งหมด</option>
+                            <option value="รับสินค้า">รับสินค้า</option>
+                            <option value="จ่ายสินค้า">จ่ายสินค้า</option>
+                        </select>
+                    </div>
+                    <div class="search-container">
+                        <p>ผู้ทำรายการ :</p>
+                        <input type="text" name="employee_name" id="employee_name" placeholder="ผู้ทำรายการ">
+                    </div>
+                    <div class="search-container">
+                        <p>เรียงลำดับตาม:</p>
+                        <select id="sortMovement" name="sortMovement">
+                            <option value="date_desc">วันที่ (ใหม่สุดไปเก่าสุด)</option>
+                            <option value="date_asc">วันที่ (เก่าสุดไปใหม่สุด)</option>
+                            <option value="type">ประเภทรายการ (รับ-จ่าย)</option>
+                            <option value="product_name">ชื่อสินค้า (A-Z)</option>
+                            <option value="amount_desc">จำนวน (มากไปน้อย)</option>
+                            <option value="amount_asc">จำนวน (น้อยไปมาก)</option>
+                        </select>
+                    </div>
+
+                    <% } else if (type==='stock' ) { %>
+
+                        <div class="search-container">
+                            <p>แบรนสินค้า :</p>
+                            <select id="brandId" name="brandId">
+                                <option value="">ทั้งหมด</option>
+                                <% brands.forEach(function(brand) { %>
+                                    <option value="<%= brand.brand_id %>">
+                                        <%= brand.brand_name %>
+                                    </option>
+                                    <% }); %>
+                            </select>
+                        </div>
+                        <div class="search-container">
+                                <p>คงเหลือต่ำกว่า (ชิ้น) :</p>
+                                <input type="number" id="productLeft" name="productLeft" min="1" placeholder="จำนวนสินค้า">
+                            </div>
+                        <div class="search-container">
+                            <p>เรียงลำดับตาม:</p>
+                            <select id="sortBy" name="sortBy">
+                                <option value="product_id">รหัสสินค้า</option>
+                                <option value="product_name">ชื่อสินค้า</option>
+                                <option value="brand_name">ชื่อแบรนด์</option>
+                                <option value="total_quantity_desc">สินค้าคงเหลือ (มากไปน้อย)</option>
+                                <option value="total_quantity_asc">สินค้าคงเหลือ (น้อยไปมาก)</option>
+                            </select>
+                        </div>
+                        
+                        <% } else if (type==='expire' ) { %>
+                            <div class="search-container">
+                            <p>แบรนสินค้า :</p>
+                            <select id="brandId" name="brandId">
+                                <option value="">ทั้งหมด</option>
+                                <% brands.forEach(function(brand) { %>
+                                    <option value="<%= brand.brand_id %>">
+                                        <%= brand.brand_name %>
+                                    </option>
+                                    <% }); %>
+                            </select>
+                        </div>
+                        <div class="search-container">
+                    <p>รหัสล็อต :</p>
+                    <input type="text" id="lotCode" name="lotCode" placeholder="รหัสล็อต"></input>
+                </div>
+                            <div class="search-container">
+                                <p>หมดอายุภายใน (วัน):</p>
+                                <input type="number" id="expireDays" name="expireDays" value="30" min="1">
+                            </div>
+                            <div class="search-container">
+                            <p>เรียงลำดับตาม:</p>
+                            <select id="sortBy" name="sortBy">
+                                <option value="exp_date_asc">วันหมดอายุ (น้อยไปมาก)</option>
+                                <option value="exp_date_desc">วันหมดอายุ (มากไปน้อย)</option>
+                                <option value="product_id">รหัสสินค้า</option>
+                                <option value="product_name">ชื่อสินค้า</option>
+                                <option value="brand_name">ชื่อแบรนด์</option>
+                            </select>
+                        </div>
+                            <% } %>
+
+                            
+                                    <button type="submit" class="style-button">สร้างรายงาน</button>
+
+        </form>
+
+        <div id="errorBox" class="error-msg hidden">
+                                </div>
+
+                                <div class="action-bar hidden" id="actionBar">
+                                    <button id="exportBtn" class="style-button">Export (CSV)</button>
+                                </div>
+
+                                <div class="table-scroll-container hidden" id="tableContainer">
+                                    <table>
+                                        <thead id="tableHeader">
+                                        </thead>
+                                        <tbody id="tableBody">
+                                        </tbody>
+                                    </table>
+                                </div>
+        </div>
+
+        <script>
+            // รับค่า type จากฝั่ง Backend มาเก็บไว้ในตัวแปร JavaScript
+            const reportType = "<%= type %>";
+
+            // 1. เพิ่มคำว่า async เข้าไปตรงนี้
+            async function generateTable() {
+
+                // รีเซ็ต UI
+                const errorBox = document.getElementById('errorBox');
+                const tableContainer = document.getElementById('tableContainer');
+                const actionBar = document.getElementById('actionBar');
+                errorBox.classList.add('hidden');
+                tableContainer.classList.add('hidden');
+                actionBar.classList.add('hidden');
+
+                // ใช้ reportType เป็นพารามิเตอร์หลัก
+                let queryParams = new URLSearchParams({ reportType: reportType });
+
+                const productName = document.getElementById('productName').value;
+            if (productName) queryParams.append('productName', productName);
+
+                if (reportType === 'movement') {
+                    const start = document.getElementById('startDate').value;
+                    const end = document.getElementById('endDate').value;
+
+                    if (start && end && new Date(start) > new Date(end)) {
+                        if (errorBox) {
+                            errorBox.innerText = "ระบุช่วงเวลาไม่ถูกต้อง (วันที่เริ่มต้นต้องน้อยกว่าหรือเท่ากับวันที่สิ้นสุด)";
+                            errorBox.classList.remove('hidden');
+                        }
+                        return;
+                    }
+                    if (start) queryParams.append('startDate', start);
+                    if (end) queryParams.append('endDate', end);
+
+                    // 📌 2. ดึงค่าฟิลเตอร์ใหม่ของรายงาน Movement (ประเภทรายการ & ผู้ทำรายการ)
+                    const transType = document.getElementById('transType').value;
+                    const employeeName = document.getElementById('employee_name').value;
+                    const sortMovement = document.getElementById('sortMovement').value;
+
+                    if (transType) queryParams.append('transType', transType);
+                    if (employeeName) queryParams.append('employee_name', employeeName);
+                    if (sortMovement) queryParams.append('sortBy', sortMovement); // ส่งค่าชื่อ sortBy ไปให้ Backend
+
+                } else if (reportType === 'stock') {
+                    const brandId = document.getElementById('brandId').value;
+                    const sortBy = document.getElementById('sortBy').value; // <-- เพิ่มบรรทัดนี้
+                    const productLeft = document.getElementById('productLeft').value;
+
+                    if (brandId) queryParams.append('brandId', brandId);
+                    if (sortBy) queryParams.append('sortBy', sortBy);
+                    if (productLeft) queryParams.append('productLeft', productLeft);
+
+                } else if (reportType === 'expire') {
+                    const expireDays = document.getElementById('expireDays')?.value;
+                    const brandId = document.getElementById('brandId')?.value;
+                    const lotCode = document.getElementById('lotCode')?.value;
+                    const sortBy = document.getElementById('sortBy')?.value;
+
+                    if (expireDays) queryParams.append('expireDays', expireDays);
+                    if (brandId) queryParams.append('brandId', brandId);
+                    if (lotCode) queryParams.append('lotCode', lotCode);
+                    if (sortBy) queryParams.append('sortBy', sortBy);
+                }
+
+                try {
+                    // 2. เติม /api/ ข้างหน้า URL ให้ตรงกับ Backend
+                    const response = await fetch(`/generate-report?${queryParams.toString()}`);
+                    const data = await response.json();
+
+                    if (!response.ok) {
+                        errorBox.innerText = data.error || "เกิดข้อผิดพลาดในการโหลดข้อมูล";
+                        errorBox.classList.remove('hidden');
+                        return;
+                    }
+
+                    // สร้างหัวตารางและเนื้อหาตามประเภทรายงาน
+                    renderTable(reportType, data);
+
+                    // แสดงตารางและปุ่ม Export
+                    tableContainer.classList.remove('hidden');
+                    actionBar.classList.remove('hidden');
+
+                    // บันทึก query ไว้ใช้กับปุ่ม Export
+                    window.currentReportQuery = queryParams.toString();
+
+                } catch (err) {
+                    console.error("Fetch Error:", err);
+                    errorBox.innerText = "ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้";
+                    errorBox.classList.remove('hidden');
+                }
+            }
+
+            // ฟังก์ชันวาดตาราง (เหมือนเดิม)
+            function renderTable(type, data) {
+                const thead = document.getElementById('tableHeader');
+                const tbody = document.getElementById('tableBody');
+
+                thead.innerHTML = "";
+                tbody.innerHTML = "";
+
+                if (type === 'movement') {
+                    thead.innerHTML = `<tr>
+                    <th>วันที่</th><th>ประเภทรายการ</th><th>รหัสสินค้า</th>
+                    <th>ชื่อสินค้า</th><th>จำนวน</th><th>ผู้ทำรายการ</th>
+                </tr>`;
+                    data.forEach(row => {
+                        tbody.innerHTML += `<tr>
+                        <td>${row.transaction_date}</td>
+                        <td>${row.transaction_type}</td>
+                        <td>${row.product_id}</td>
+                        <td>${row.product_name}</td>
+                        <td>${row.change_amount}</td>
+                        <td>${row.employee_name}</td>
+                    </tr>`;
+                    });
+                }
+                else if (type === 'stock') {
+                    thead.innerHTML = `<tr>
+                    <th>รหัสสินค้า</th><th>ชื่อสินค้า</th><th>แบรนด์</th>
+                    <th>คงเหลือ (ชิ้น)</th><th>ต้นทุน/ชิ้น</th><th>มูลค่ารวม</th>
+                </tr>`;
+                    data.forEach(row => {
+                        tbody.innerHTML += `<tr>
+                        <td>${row.product_id}</td>
+                        <td>${row.product_name}</td>
+                        <td>${row.brand_name}</td>
+                        <td>${row.total_quantity}</td>
+                        <td>${Number(row.cost_price).toLocaleString('th-TH')} ฿</td>
+                        <td>${Number(row.total_value).toLocaleString('th-TH')} ฿</td>
+                    </tr>`;
+                    });
+                }
+                else if (type === 'expire') {
+                    thead.innerHTML = `<tr>
+                    <th>รหัสสินค้า</th><th>ชื่อสินค้า</th><th>แบรนด์</th><th>รหัสล็อต</th>
+                    <th>จำนวน</th><th>วันหมดอายุ</th><th>เหลือเวลา (วัน)</th>
+                </tr>`;
+                    data.forEach(row => {
+                        const daysStyle = row.days_remaining <= 7 ? 'color: red; font-weight: bold;' : '';
+                        tbody.innerHTML += `<tr>
+                        <td>${row.product_id}</td>
+                        <td>${row.product_name}</td>
+                        <td>${row.brand_name}</td>
+                        <td>${row.lot_batch_code}</td>
+                        <td>${row.quantity}</td>
+                        <td>${row.exp_date}</td>
+                        <td style="${daysStyle}">${row.days_remaining}</td>
+                    </tr>`;
+                    });
+                }
+            }
+
+            // จัดการเมื่อกดปุ่ม Export (เหมือนเดิม)
+            document.getElementById('exportBtn').addEventListener('click', function () {
+                if (window.currentReportQuery) {
+                    window.location.href = `/export-report?${window.currentReportQuery}`;
+                }
+            });
+
+            window.addEventListener('DOMContentLoaded', () => {
+                generateTable();
+            });
+        </script>
+</body>
+
+</html>
