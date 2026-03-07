@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <title>แจ้งเตือนสินค้าใกล้หมดอายุ</title>
+</head>
+<body>
+    <h1>⚠️ สินค้าที่กำลังจะหมดอายุ (ภายใน 30 วัน)</h1>
+    <table border="1" cellpadding="10">
+        <thead>
+            <tr>
+                <th>SKU</th>
+                <th>ชื่อสินค้า</th>
+                <th>Lot/Batch</th>
+                <th>จำนวนคงเหลือ</th>
+                <th>วันหมดอายุ</th>
+            </tr>
+        </thead>
+        <tbody>
+            <% if (expiringProducts.length === 0) { %>
+                <tr><td colspan="5">ไม่มีสินค้าที่กำลังจะหมดอายุ</td></tr>
+            <% } else { %>
+                <% expiringProducts.forEach(p => { %>
+                    <tr>
+                        <td><%= p.sku %></td>
+                        <td><%= p.product_name %></td>
+                        <td><%= p.lot_batch_code %></td>
+                        <td><%= p.quantity %></td>
+                        <td style="background-color: #ffcccc;"><%= p.exp_date %></td>
+                    </tr>
+                <% }) %>
+            <% } %>
+        </tbody>
+    </table>
+    <br>
+    <a href="/history">กลับไปหน้าประวัติ</a>
+</body>
+</html>
