@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <%- include('head') %>
+    <title>รับสินค้าเข้าคลัง</title>
+    <link rel="stylesheet" href="/css/layout.css"> 
+    <link rel="stylesheet" href="/css/styleReceive.css">
+</head>
+<body>
+    <%- include('nav') %>
+        <div class="main-content">
+            <h1 class="header-title">รับสินค้าเข้าคลัง</h1>
+            
+            <div class="list-container">
+                <% products.forEach(product => { %>
+                    <div class="product-card">
+                        <div class="product-info">
+                            <span class="product-number"><%= product.id %>.</span>
+                            <span class="product-name"><%= product.name %></span>
+                        </div>
+                        <a href="/receive/add/<%= product.id %>" class="btn-add">เพิ่ม</a>
+                    </div>
+                <% }); %>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

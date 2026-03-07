@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>สาขา</title>
+    <link rel="stylesheet" href="/css/withdraw_layout.css">
+    <link rel="stylesheet" href="/css/withdraw_list.css">
+    <link rel="stylesheet" href="/css/nav.css">
+</head>
+<body>
+    <%- include('nav') %>
+    <div class="main-content">
+    <h2 class="branch-label">สาขา <%= branchName %></h2>
+    <div class="list-container">
+        <% products.forEach(product => { %>
+        <div class="product-item">
+            <span><%= product.id %>. <%= product.name %></span>
+            <a href="/withdraw/item/<%= product.id %>?branch=<%= branchId %>" class="btn-select">เลือก</a>
+        </div>
+        <% }); %>
+    </div>
+    <script src="/script/nav.js"></script>
+</div>
+</body>
+</html>

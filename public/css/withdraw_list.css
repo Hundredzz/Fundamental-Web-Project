@@ -1,0 +1,28 @@
+body {
+    margin: 0;
+    background: url(/img/bg.png) repeat, #3B010B;
+    overflow-x: hidden;
+}
+.branch-label { color: #5d0e1a; align-self: flex-start; margin-left: 10%; }
+.list-container {
+    width: 80%;
+    border: 3px solid #5d0e1a;
+    border-radius: 15px;
+    padding: 10px;
+    background: rgba(255,255,255,0.3);
+}
+.product-item {
+    background: #f9e2b8;
+    margin: 10px;
+    padding: 15px;
+    display: flex;
+    justify-content: space-between;
+    border-radius: 8px;
+}
+.btn-select {
+    background: #28a745;
+    color: white;
+    text-decoration: none;
+    padding: 5px 15px;
+    border-radius: 5px;
+}
