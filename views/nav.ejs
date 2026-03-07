@@ -1,19 +1,26 @@
-    <div id="web-header" style="width: 100vw;">
+<div id="web-header" style="width: 100vw;">
+</div>
+<button id="menu-toggle-btn" class="menu-toggle-btn">
+    <img src="/img/home-icon.svg" alt="Menu Icon" style="opacity: 1;">
+    <img src="/img/home-icon2.svg" alt="Menu Icon" style="opacity: 0; position: absolute;">
+    <h2>เริ่ดจัด</h2>
+</button>
+
+
+<nav id="side-menu" class="side-menu">
+    <div style="display: flex; flex-direction: column; gap: 10px;">
+        <% if (user && user.role==='Manager' ) { %>
+            <a href="/dashboard">หน้าหลัก</a>
+            <a href="/manage">จัดการผู้ใช้</a>
+            <a href="/report">สร้างรายงาน</a>
+            <a href="/product">จัดการข้อมูลสินค้า</a>
+            <a href="/history">ประวัติการรับ - จ่ายสินค้า</a>
+        <% } else { %>
+            <a href="/dashboard">หน้าหลัก</a>
+            <a href="/product">จัดการข้อมูลสินค้า</a>
+            <a href="#">ติดตามวันหมดอายุ</a>
+            <a href="/history">ประวัติการรับ - จ่ายสินค้า</a>
+        <% } %>
     </div>
-        <button id="menu-toggle-btn" class="menu-toggle-btn">
-            <img src="/img/home-icon.svg" alt="Menu Icon" style="opacity: 1;">
-            <img src="/img/home-icon2.svg" alt="Menu Icon" style="opacity: 0; position: absolute;">
-            <h2>เริ่ดจัด</h2>
-        </button>
-
-
-    <nav id="side-menu" class="side-menu">
-        <div style="display: flex; flex-direction: column; gap: 10px;">
-            <a href="#">หน้าหลัก</a>
-            <a href="#">ประวัติรับ - จ่ายสินค้า</a>
-            <a href="#">จัดการข้อมูลสินค้า</a>
-            <a href="#">จัดการผู้ใช้งาน</a>
-            <a href="#">สร้างรายงาน</a>
-        </div>
-        <a href="#" class="user-button">User</a>
-    </nav>
+    <a href="/logout" class="user-button">Logout</a>
+</nav>
