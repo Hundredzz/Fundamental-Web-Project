@@ -164,14 +164,10 @@ app.post("/login", (req, res) => {
     });
 });
 
-<<<<<<< HEAD
-app.get("/receive", (req, res) => { 
+app.get("/receive", isAuthenticated, (req, res) => { 
     res.render("receive_stock");
 });
 
-app.post("/add", (req, res) => {
-    const { username, password } = req.body;
-=======
 app.get("/logout", (req, res) => {
     req.session.destroy((err) => {
         if (err) {
@@ -183,7 +179,6 @@ app.get("/logout", (req, res) => {
         res.redirect("/");
     });
 });
->>>>>>> main
 
 // ==========================================
 // 3. PROTECTED ROUTES (Requires Login)
@@ -251,8 +246,6 @@ app.get("/dashboard", isAuthenticated, (req, res) => {
         res.render("mainpage", { dashData: dashData });
     });
 });
-
-app.get("/mainpage", isAuthenticated, (req, res) => res.render("mainpage"));
 app.get("/history", isAuthenticated, authorizeRoles(["Manager", "Staff"]), (req, res) => {
     const sql = `
         SELECT 
@@ -1155,7 +1148,6 @@ app.delete("/delete-product/:id", isAuthenticated, authorizeRoles(["Manager", "S
     });
 });
 
-<<<<<<< HEAD
 app.get('/receive-stock', (req, res) => {
     const products = [
         { id: 1, name: 'Foundation' },
@@ -1178,63 +1170,10 @@ app.get('/receive/add/:id', (req, res) => {
         res.render('receive_form', { 
             brand_id: row.brand_id, 
             brand_name: row.brand_name 
-=======
-app.get('/fetch-product/:page', isAuthenticated, authorizeRoles(["Manager", "Staff"]), (req, res) => {
-    const limit = 18; const page = parseInt(req.params.page) || 1; const offset = (page - 1) * limit;
-    const q = req.query.q || ''; const category = req.query.category || ''; const brand = req.query.brand || '';
-
-    let sql = `SELECT p.product_name AS product_name, p.img_path AS img_path, p.product_id AS product_id, c.category_name AS category_name, b.brand_name AS brand_name, COALESCE(SUM(l.quantity), 0) AS total_quantity
-               FROM Products p LEFT JOIN Categories c ON p.category_id = c.category_id LEFT JOIN Brands b ON p.brand_id = b.brand_id LEFT JOIN Lots l ON p.product_id = l.product_id WHERE 1=1`;
-    let countQuery = `SELECT COUNT(*) AS count FROM Products p LEFT JOIN Categories c ON p.category_id = c.category_id LEFT JOIN Brands b ON p.brand_id = b.brand_id WHERE 1=1`;
-    let queryParams = [];
-
-    if (q.trim() !== '') { sql += ` AND (p.product_name LIKE ? OR p.product_id LIKE ?)`; countQuery += ` AND (p.product_name LIKE ? OR p.product_id LIKE ?)`; queryParams.push(`%${q}%`, `%${q}%`); }
-    if (category.trim() !== '') { sql += ` AND c.category_name = ?`; countQuery += ` AND c.category_name = ?`; queryParams.push(category); }
-    if (brand.trim() !== '') { sql += ` AND b.brand_name = ?`; countQuery += ` AND b.brand_name = ?`; queryParams.push(brand); }
-
-    sql += ` GROUP BY p.product_id ORDER BY p.product_name ASC`;
-
-    db.get(countQuery, queryParams, (err, row) => {
-        if (err) return res.status(500).json({ error: "Database error" });
-        const totalPages = Math.ceil(row.count / limit);
-        const finalSql = sql + ` LIMIT ? OFFSET ?`;
-        const finalParams = [...queryParams, limit, offset];
-
-        db.all(finalSql, finalParams, (err, rows) => {
-            if (err) return res.status(500).json({ error: "Database error" });
-            res.render('productSection', { data: rows, currentPage: page, totalPages: totalPages }, (err, html) => {
-                if (err) return res.status(500).json({ error: "Render error" });
-                res.json({ html: html });
-            });
->>>>>>> main
         });
     });
 });
 
-<<<<<<< HEAD
-app.use(express.urlencoded({ extended: true }));
-app.use(express.json());
-// ตรวจสอบและสร้างตาราง stock หากยังไม่มีอยู่
-db.serialize(() => {
-    db.run(`CREATE TABLE IF NOT EXISTS stock (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        brand_id INTEGER,
-        quantity INTEGER,
-        lot_number TEXT,
-        mfd_date TEXT,
-        exp_date TEXT,
-        supplier TEXT,
-        remark TEXT,
-        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
-    )`, 
-    (err) => {
-        if (err) {
-            console.error("สร้างตารางไม่สำเร็จ:", err.message);
-        } else {
-            console.log("ตาราง stock พร้อมใช้งานแล้ว");
-        }
-    });
-});
 app.post('/save-stock', (req, res) => {
     console.log("ข้อมูลที่รับมา:", req.body);
 
@@ -1283,7 +1222,37 @@ app.post('/withdraw/confirm', (req, res) => {
 app.get('/scan', (req, res) => {
     res.render('scan');
 });
-=======
+app.get('/fetch-product/:page', isAuthenticated, authorizeRoles(["Manager", "Staff"]), (req, res) => {
+    const limit = 18; const page = parseInt(req.params.page) || 1; const offset = (page - 1) * limit;
+    const q = req.query.q || ''; const category = req.query.category || ''; const brand = req.query.brand || '';
+
+    let sql = `SELECT p.product_name AS product_name, p.img_path AS img_path, p.product_id AS product_id, c.category_name AS category_name, b.brand_name AS brand_name, COALESCE(SUM(l.quantity), 0) AS total_quantity
+               FROM Products p LEFT JOIN Categories c ON p.category_id = c.category_id LEFT JOIN Brands b ON p.brand_id = b.brand_id LEFT JOIN Lots l ON p.product_id = l.product_id WHERE 1=1`;
+    let countQuery = `SELECT COUNT(*) AS count FROM Products p LEFT JOIN Categories c ON p.category_id = c.category_id LEFT JOIN Brands b ON p.brand_id = b.brand_id WHERE 1=1`;
+    let queryParams = [];
+
+    if (q.trim() !== '') { sql += ` AND (p.product_name LIKE ? OR p.product_id LIKE ?)`; countQuery += ` AND (p.product_name LIKE ? OR p.product_id LIKE ?)`; queryParams.push(`%${q}%`, `%${q}%`); }
+    if (category.trim() !== '') { sql += ` AND c.category_name = ?`; countQuery += ` AND c.category_name = ?`; queryParams.push(category); }
+    if (brand.trim() !== '') { sql += ` AND b.brand_name = ?`; countQuery += ` AND b.brand_name = ?`; queryParams.push(brand); }
+
+    sql += ` GROUP BY p.product_id ORDER BY p.product_name ASC`;
+
+    db.get(countQuery, queryParams, (err, row) => {
+        if (err) return res.status(500).json({ error: "Database error" });
+        const totalPages = Math.ceil(row.count / limit);
+        const finalSql = sql + ` LIMIT ? OFFSET ?`;
+        const finalParams = [...queryParams, limit, offset];
+
+        db.all(finalSql, finalParams, (err, rows) => {
+            if (err) return res.status(500).json({ error: "Database error" });
+            res.render('productSection', { data: rows, currentPage: page, totalPages: totalPages }, (err, html) => {
+                if (err) return res.status(500).json({ error: "Render error" });
+                res.json({ html: html });
+            });
+        });
+    });
+});
+
 app.get("/api/product/:id", isAuthenticated, authorizeRoles(["Manager", "Staff"]), (req, res) => {
     const productId = req.params.id;
     const query = `
@@ -1303,7 +1272,6 @@ app.get("/api/product/:id", isAuthenticated, authorizeRoles(["Manager", "Staff"]
     });
 });
 
->>>>>>> main
 
 app.listen(port, () => {
     console.log(`Server is running on http://localhost:${port}`);
