@@ -4,38 +4,89 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>สินค้าหมดอายุ</title>
-    <link rel="stylesheet" href="/css/withdraw_layout.css">
-    <link rel="stylesheet" href="/css/expiry_table.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&icon_names=search" />
+    <link rel="stylesheet" href="/css/table.css">
+    <link rel="stylesheet" href="/css/button.css">
+    <link rel="stylesheet" href="/css/search.css">
+    <link rel="stylesheet" href="/css/popupManage.css">
+    <style>
+        .big{
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        .container {
+            display: flex;
+            flex-direction: row;
+            justify-content: center;
+            align-items: center;
+            background-color: #75162D;
+            width: 80%;
+            padding-block: 1%;
+            gap: 20px;
+        }
+        h1 {
+            text-align: center;
+            color: #75162D;
+        }
+
+        @media screen and (max-width: 800px) {
+            .brand-side {
+                flex: 0;
+            }
+        }
+        .material-symbols-outlined {
+            font-variation-settings:
+                'FILL' 0,
+                'wght' 400,
+                'GRAD' 0,
+                'opsz' 24
+        }
+        .search-icon {
+            font-size: 20px;
+            margin-right: 1%;
+        }
+    </style>
 </head>
 <body>
-    <div class="main-content">
-        <h1 class="header-title">สินค้าหมดอายุ</h1>
-        <div class="table-container">
-            <table class="solid-table">
-                <thead>
-                    <tr>
-                        <th>รหัสสินค้า</th>
-                        <th>ชื่อสินค้า</th>
-                        <th>แบรนด์</th>
-                        <th>เลข Lot/Batch</th>
-                        <th>จำนวนคงเหลือ</th>
-                        <th>วันหมดอายุ</th>
-                        <th>สถานะ</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>001</td>
-                        <td>Foundation</td>
-                        <td>Brand A</td>
-                        <td>L67001</td>
-                        <td>50</td>
-                        <td>01/05/2026</td>
-                        <td>ปกติ</td>
-                    </tr>
-                    </tbody>
-            </table>
-        </div>
+    <div class="big">
+        <h1>ประวัติการรับ-จ่ายสินค้า</h1>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>รหัสสินค้า</th>
+                    <th>ชื่อสินค้า</th>
+                    <th>แบรนด์</th>
+                    <th>เลข Lot/Batch</th>
+                    <th>จำนวนคงเหลือ</th>
+                    <th>วันหมดอายุ</th>
+                    <th>สถานะ</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>001</td>
+                    <td>Foundation</td>
+                    <td>Brand A</td>
+                    <td>L67001</td>
+                    <td>50</td>
+                    <td>01/05/2026</td>
+                    <td>ปกติ</td>
+                </tr>
+                <tr>
+                    <td>001</td>
+                    <td>Foundation</td>
+                    <td>Brand A</td>
+                    <td>L67001</td>
+                    <td>50</td>
+                    <td>01/05/2026</td>
+                    <td>ปกติ</td>
+                </tr>
+            </tbody>
+        </table>
     </div>
+    <div id="confirmPopup" class="popup-overlay"></div>
 </body>
 </html>
