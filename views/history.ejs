@@ -5,17 +5,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ประวัติการรับ-จ่ายสินค้า</title>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&icon_names=search" />
+    <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&icon_names=search" />
     <link rel="stylesheet" href="/css/table.css">
     <link rel="stylesheet" href="/css/button.css">
     <link rel="stylesheet" href="/css/search.css">
     <style>
-        .big{
+        .big {
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
         }
+
         .container {
             display: flex;
             flex-direction: row;
@@ -26,6 +28,7 @@
             padding-block: 1%;
             gap: 20px;
         }
+
         h1 {
             text-align: center;
             color: #75162D;
@@ -36,6 +39,7 @@
                 flex: 0;
             }
         }
+
         .material-symbols-outlined {
             font-variation-settings:
                 'FILL' 0,
@@ -43,9 +47,36 @@
                 'GRAD' 0,
                 'opsz' 24
         }
+
         .search-icon {
             font-size: 20px;
             margin-right: 1%;
+        }
+
+        .clear-btn {
+            color: #F2D9A0; /* สีเหลืองนวลตามธีมคุณ */
+            text-decoration: none;
+            font-size: 14px;
+            padding: 5px 10px;
+            border: 1px solid #F2D9A0;
+            border-radius: 5px;
+            transition: 0.3s;
+        }
+
+        .clear-btn:hover {
+            background-color: #F2D9A0;
+            color: #75162D;
+        }
+        /* สำหรับรายการรับเข้า (บวก) */
+        .text-success {
+            color: green;
+            font-weight: bold;
+        }
+
+        /* สำหรับรายการจ่ายออก (ลบ) */
+        .text-danger {
+            color: red;
+            font-weight: bold;
         }
     </style>
 </head>
@@ -54,16 +85,25 @@
     <div class="big">
         <h1>ประวัติการรับ-จ่ายสินค้า</h1>
 
-        <form action="/history" method="post" class="container">
-            <input type="text" name="username" id="username" placeholder="ระบุชื่อสินค้า">
-            <input type="date" name="data" id="date">
+        <form action="/history" method="get" class="container">
+            <input type="text" name="username" id="username" placeholder="ระบุชื่อสินค้า" 
+                   value="<%= query.username || '' %>">
+            
+            <input type="date" name="data" id="date" 
+                   value="<%= query.data || '' %>">
+            
             <select name="type" id="type">
                 <option value="">เลือกประเภทรายการ</option>
-                <option value="รับสินค้า">รับสินค้า</option>
-                <option value="จ่ายสินค้า">จ่ายสินค้า</option>
+                <option value="RESTOCK" <%= query.type === 'RESTOCK' ? 'selected' : '' %>>รับสินค้า</option>
+                <option value="DISPATCH" <%= query.type === 'DISPATCH' ? 'selected' : '' %>>จ่ายสินค้า</option>
             </select>
-            <button type="submit" class="style-button"><span
-                    class="material-symbols-outlined search-icon">search</span><span>ค้นหา</span></button>
+            
+            <button type="submit" class="style-button">
+                <span class="material-symbols-outlined search-icon">search</span>
+                <span>ค้นหา</span>
+            </button>
+            
+            <a href="/history" class="clear-btn">ล้างค่า</a>
         </form>
 
         <table>
@@ -78,22 +118,30 @@
                 </tr>
             </thead>
             <tbody>
-                <tr>
-                    <td>1</td>
-                    <td>แป้ง</td>
-                    <td>5000</td>
-                    <td>02-25-65</td>
-                    <td>จ่าย</td>
-                    <td>บัญชี</td>
-                </tr>
-                <tr>
-                    <td>1</td>
-                    <td>แป้ง</td>
-                    <td>5000</td>
-                    <td>02-25-65</td>
-                    <td>จ่าย</td>
-                    <td>บัญชี</td>
-                </tr>
+                <% if (historyData && historyData.length> 0) { %>
+                    <% historyData.forEach(item => { %>
+                        <tr>
+                            <td><%= item.trans_id %></td>
+                            <td><%= item.product_name %></td>
+                            <td class="<%= item.change_amount > 0 ? 'text-success' : 'text-danger' %>">
+                                <%= (item.change_amount > 0 ? '+' : '') + item.change_amount %>
+                            </td>
+                            <td>
+                                <%= new Date(item.trans_date).toLocaleString('th-TH') %>
+                            </td>
+                            <td>
+                                <span class="status-badge">
+                                    <%= item.trans_type === 'RESTOCK' ? 'รับสินค้า' : 'จ่ายสินค้า' %>
+                                </span>
+                            </td>
+                            <td><%= item.staff_name %></td>
+                        </tr>
+                    <% }) %>
+                <% } else { %>
+                    <tr>
+                        <td colspan="6" style="text-align: center;">ยังไม่มีประวัติรายการ</td>
+                    </tr>
+                <% } %>
             </tbody>
         </table>
     </div>

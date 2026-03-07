@@ -187,7 +187,58 @@ app.get("/dashboard", isAuthenticated, (req, res) => {
 });
 
 app.get("/mainpage", isAuthenticated, (req, res) => res.render("mainpage"));
-app.get("/history", isAuthenticated, (req, res) => res.render("history"));
+
+// ==========================================
+// หน้าประวัติ
+app.get("/history", isAuthenticated, (req, res) => {
+    const { username, data, type } = req.query; 
+
+    let sql = `
+        SELECT 
+            t.trans_id, 
+            p.product_name, 
+            t.change_amount, 
+            t.trans_date, 
+            t.trans_type, 
+            e.first_name || ' ' || e.last_name AS staff_name
+        FROM Transactions t
+        JOIN Products p ON t.product_id = p.product_id
+        JOIN Employees e ON t.employee_id = e.employee_id
+        WHERE 1=1
+    `;
+    
+    const params = [];
+
+    if (username) {
+        sql += ` AND p.product_name LIKE ?`;
+        params.push(`%${username}%`);
+    }
+    if (data) {
+        sql += ` AND DATE(t.trans_date) = ?`;
+        params.push(data);
+    }
+    if (type) {
+        sql += ` AND t.trans_type = ?`;
+        params.push(type);
+    }
+
+    sql += ` ORDER BY t.trans_date DESC`;
+
+    db.all(sql, params, (err, rows) => {
+        if (err) {
+            console.error("SQL Error:", err.message);
+            return res.status(500).send("Database error");
+        }
+        
+        res.render("history", { 
+            historyData: rows, 
+            query: req.query  
+        });
+    });
+});
+
+// ==========================================
+
 app.get("/report", isAuthenticated, (req, res) => res.render("report"));
 app.get("/createReport", isAuthenticated, (req, res) => res.render("createReport"));
 app.get("/manageEdit", isAuthenticated, (req, res) => res.render("manageEdit"));
