@@ -915,6 +915,7 @@ app.get('/toggle-ban/:userid/:status', isAuthenticated, authorizeRoles(["Manager
 
 // --- Product Routes ---
 app.get("/product", isAuthenticated, authorizeRoles(["Manager", "Staff"]), (req, res) => {
+    const searchTerm = req.query.search || "";
     const limit = 18; const page = 1; const offset = 0;
     const query = `
         SELECT p.product_name AS product_name, p.img_path AS img_path, p.product_id AS product_id, 
@@ -935,11 +936,15 @@ app.get("/product", isAuthenticated, authorizeRoles(["Manager", "Staff"]), (req,
             if (err) return res.status(500).send("Database error");
             res.render('showProduct', {
                 data: rows, 
-                currentPage: page, totalPages: totalPages
+                currentPage: page, totalPages: totalPages,
+                totalPages: Math.ceil(row.count / limit),
+                searchTerm: searchTerm
             });
         });
     });
 });
+
+//--------------------
 
 app.get('/search', isAuthenticated, authorizeRoles(["Manager", "Staff"]), (req, res) => {
     const q = req.query.q || ''; const category = req.query.category || ''; const brand = req.query.brand || '';
@@ -1218,10 +1223,13 @@ app.get('/withdraw/item/:id', (req, res) => {
 app.post('/withdraw/confirm', (req, res) => {
     res.render('withdraw_success');
 });
-
-app.get('/scan', (req, res) => {
-    res.render('scan');
+// scan
+app.get("/scan", isAuthenticated, (req, res) => {
+    res.render("scan", { 
+        user: req.session.user 
+    });
 });
+//
 app.get('/fetch-product/:page', isAuthenticated, authorizeRoles(["Manager", "Staff"]), (req, res) => {
     const limit = 18; const page = parseInt(req.params.page) || 1; const offset = (page - 1) * limit;
     const q = req.query.q || ''; const category = req.query.category || ''; const brand = req.query.brand || '';
