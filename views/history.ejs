@@ -2,101 +2,64 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ประวัติการรับ-จ่ายสินค้า</title>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&icon_names=search" />
-    <link rel="stylesheet" href="/css/table.css">
-    <link rel="stylesheet" href="/css/button.css">
-    <link rel="stylesheet" href="/css/search.css">
-    <style>
-        .big{
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-        }
-        .container {
-            display: flex;
-            flex-direction: row;
-            justify-content: center;
-            align-items: center;
-            background-color: #75162D;
-            width: 80%;
-            padding-block: 1%;
-            gap: 20px;
-        }
-        h1 {
-            text-align: center;
-            color: #75162D;
-        }
-
-        @media screen and (max-width: 800px) {
-            .brand-side {
-                flex: 0;
-            }
-        }
-        .material-symbols-outlined {
-            font-variation-settings:
-                'FILL' 0,
-                'wght' 400,
-                'GRAD' 0,
-                'opsz' 24
-        }
-        .search-icon {
-            font-size: 20px;
-            margin-right: 1%;
-        }
-    </style>
+    <%- include('head') %>
+        <title>ประวัติการรับ-จ่ายสินค้า</title>
+        <link rel="stylesheet"
+            href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&icon_names=search" />
+        <link rel="stylesheet" href="/css/table.css">
+        <link rel="stylesheet" href="/css/button.css">
+        <link rel="stylesheet" href="/css/search.css">
+        <link rel="stylesheet" href="/css/history.css">
+        <script src="/script/search.js" defer></script>
 </head>
 
 <body>
-    <div class="big">
-        <h1>ประวัติการรับ-จ่ายสินค้า</h1>
+    <%- include('nav') %>
+        <div class="main-content" id="main-content">
+            <h1>ประวัติการรับ-จ่ายสินค้า</h1>
 
-        <form action="/history" method="post" class="container">
-            <input type="text" name="username" id="username" placeholder="ระบุชื่อสินค้า">
-            <input type="date" name="data" id="date">
-            <select name="type" id="type">
-                <option value="">เลือกประเภทรายการ</option>
-                <option value="รับสินค้า">รับสินค้า</option>
-                <option value="จ่ายสินค้า">จ่ายสินค้า</option>
-            </select>
-            <button type="submit" class="style-button"><span
-                    class="material-symbols-outlined search-icon">search</span><span>ค้นหา</span></button>
-        </form>
-
-        <table>
-            <thead>
-                <tr>
-                    <th>รหัสรายการ</th>
-                    <th>ชื่อสินค้า</th>
-                    <th>จำนวน</th>
-                    <th>วันที่</th>
-                    <th>ประเภทรายการ</th>
-                    <th>ผู้ทำรายการ</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>1</td>
-                    <td>แป้ง</td>
-                    <td>5000</td>
-                    <td>02-25-65</td>
-                    <td>จ่าย</td>
-                    <td>บัญชี</td>
-                </tr>
-                <tr>
-                    <td>1</td>
-                    <td>แป้ง</td>
-                    <td>5000</td>
-                    <td>02-25-65</td>
-                    <td>จ่าย</td>
-                    <td>บัญชี</td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
+            <form id="search-form" onsubmit="event.preventDefault(); search('/search/transactions');" class="container">
+                <div class="search-container">
+                    <p>ชื่อหรือรหัสสินค้า :</p>
+                    <input type="text" name="productName" id="productName" placeholder="ชื่อหรือรหัสสินค้า">
+                </div>
+                <div class="search-container">
+                    <p>วันที่ทำรายการ :</p>
+                    <input type="date" name="data" id="date">
+                </div>
+                <div class="search-container">
+                    <p>ประเภทรายการ :</p>
+                    <select name="type" id="type">
+                        <option value="">ทั้งหมด</option>
+                        <option value="รับสินค้า">รับสินค้า</option>
+                        <option value="จ่ายสินค้า">จ่ายสินค้า</option>
+                    </select>
+                </div>
+                <div class="search-container">
+                    <p>ผู้ทำรายการ :</p>
+                    <input type="text" name="employee_name" id="employee_name" placeholder="ผู้ทำรายการ">
+                </div>
+                <button type="submit" class="style-button"><span
+                        class="material-symbols-outlined search-icon">search</span><span>ค้นหา</span></button>
+            </form>
+            <div class="table-scroll-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>รหัสรายการ</th>
+                            <th>ชื่อสินค้า</th>
+                            <th>จำนวน</th>
+                            <th>วันที่</th>
+                            <th>ประเภทรายการ</th>
+                            <th>ผู้ทำรายการ</th>
+                        </tr>
+                    </thead>
+                    <tbody id="table">
+                        <%- include('transactionSection', {transactions : transactions}) %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
 </body>
 
 </html>

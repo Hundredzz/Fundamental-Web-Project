@@ -103,8 +103,8 @@
                    
             <select class="input-1" name="role" required>
                 <option value="" disabled <%= !user ? 'selected' : '' %>>เลือกบทบาท</option>
-                <option value="ผู้จัดการ" <%= user && user.role === 'ผู้จัดการ' ? 'selected' : '' %>>ผู้จัดการ</option>
-                <option value="เจ้าหน้าที่คลัง" <%= user && user.role === 'เจ้าหน้าที่คลัง' ? 'selected' : '' %>>เจ้าหน้าที่คลัง</option>
+                <option value="Manager" <%= user && user.role === 'ผู้จัดการ' ? 'selected' : '' %>>ผู้จัดการ</option>
+                <option value="Staff" <%= user && user.role === 'เจ้าหน้าที่คลัง' ? 'selected' : '' %>>เจ้าหน้าที่คลัง</option>
             </select>
         </div>
 

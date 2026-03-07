@@ -1,0 +1,16 @@
+<% if (transactions && transactions.length> 0) { %>
+<% transactions.forEach(function(tran) { %>
+                    <tr>
+                        <td><%= tran.transaction_id %></td>
+                        <td><%= tran.product_name %> (<%= tran.product_id %>)</td>
+                        <td><%= tran.change_amount %></td>
+                        <td><%= tran.transaction_date %></td>
+                        <td><%= tran.transaction_type %></td> 
+                        <td><%= tran.first_name %> <%= tran.last_name %></td>
+                    </tr>
+                <% }); %>
+<% } else { %>
+                <tr>
+                    <td colspan="6" style="text-align: center; padding: 20px;">ไม่พบข้อมูลประวัติที่ค้นหา</td>
+                </tr>
+                <% } %>
