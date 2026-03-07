@@ -29,28 +29,18 @@ app.use(express.urlencoded({ extended: true }));
 
 const storageConfig = multer.diskStorage({
     destination: function (req, file, cb) {
-        // Files will be saved in 'public/img/product_image'
-        // Make sure this folder exists in your project structure!
         cb(null, path.join(__dirname, 'public/img/product_image'));
     },
     filename: function (req, file, cb) {
         const d = new Date();
-        
-        // Get the date parts and ensure they are 2 digits (e.g., '03' instead of '3')
         const year = d.getFullYear();
-        const month = String(d.getMonth() + 1).padStart(2, '0'); // Months are 0-11, so we add 1
+        const month = String(d.getMonth() + 1).padStart(2, '0');
         const date = String(d.getDate()).padStart(2, '0');
-        
-        const milli = String(d.getMilliseconds()).padStart(3, '0'); // Milliseconds are 3 digits
-
-        // Combine them into your custom prefix!
-        // Format: YYYYMMDD_HHMMSS_mmm
+        const milli = String(d.getMilliseconds()).padStart(3, '0');
         const prefix = `${year}${month}${date}_${milli}`;
-
-        // Add the original file extension at the end (e.g., .jpg, .png)
         cb(null, prefix + '_' + file.originalname);
     }
-})
+});
 
 // Connect to SQLite database
 let db = new sqlite3.Database('Warehouse.db', (err) => {
@@ -58,39 +48,76 @@ let db = new sqlite3.Database('Warehouse.db', (err) => {
         return console.error(err.message);
     }
     console.log('Connected to the SQlite database.');
-
     loadData();
 });
-
-let global_brands = [];
-let global_categories = [];
-let global_supplier = [];
 
 const uploader = multer({ storage: storageConfig });
 
 function loadData() {
     db.all(`SELECT * FROM Categories ORDER BY category_name`, [], (err, categories) => {
-        if (!err) global_categories = categories;
+        if (!err) app.locals.categories = categories;
     });
     db.all(`SELECT * FROM Brands ORDER BY brand_name`, [], (err, brands) => {
-        if (!err) global_brands = brands;
+        if (!err) app.locals.brands = brands;
     });
     db.all(`SELECT * FROM Suppliers ORDER BY supplier_name`, [], (err, suppliers) => {
-        if (!err) global_supplier = suppliers;
+        if (!err) app.locals.suppliers  = suppliers;
     });
 }
 
+// ==========================================
+// 1. AUTHENTICATION MIDDLEWARE
+// ==========================================
+function isAuthenticated(req, res, next) {
+    if (req.session && req.session.user) {
+        // Pass user data to res.locals so ALL EJS views can access it automatically
+        res.locals.user = req.session.user; 
+        return next();
+    } else {
+        // If not logged in, kick them back to login page
+        res.redirect("/?error=notfound");
+    }
+}
 
+function authorizeRoles(allowedRoles) {
+    return (req, res, next) => {
+        // 1. Double-check they are logged in (though isAuthenticated should catch this)
+        if (!req.session || !req.session.user) {
+            return res.redirect("/?error=notfound");
+        }
 
+        // 2. Check if their role is inside the allowed array
+        const userRole = req.session.user.role; // e.g., "Manager" or "Staff"
+
+        if (allowedRoles.includes(userRole)) {
+            // They have permission! Let them pass.
+            return next(); 
+        } else {
+            // They are logged in, but DO NOT have permission for this specific route
+            // You can render a nice error page here, or just send a 403 Forbidden status
+            return res.status(403).send(`
+                <div style="text-align:center; margin-top: 50px; font-family: sans-serif;">
+                    <h1>🛑 403 Forbidden</h1>
+                    <p>ขออภัย คุณไม่มีสิทธิ์เข้าถึงหน้านี้ (ต้องการสิทธิ์ระดับ: ${allowedRoles.join(" หรือ ")})</p>
+                    <a href="/dashboard">กลับไปหน้าหลัก</a>
+                </div>
+            `);
+        }
+    }
+}
+
+// ==========================================
+// 2. PUBLIC ROUTES (No login required)
+// ==========================================
 app.get("/", (req, res) => {
+    // If they are already logged in, send them straight to the dashboard
+    if (req.session.user) {
+        return res.redirect("/dashboard");
+    }
 
-    // ------------------------------------------------------
-
-    // 2. If no user is logged in, show the login page as usual
     let errorMessage = null;
-
     if (req.query.error === "notfound") {
-        errorMessage = "ไม่พบบัญชีผู้ใช้งาน หรืออีเมลนี้ในระบบ";
+        errorMessage = "ไม่พบบัญชีผู้ใช้งาน หรืออีเมลนี้ในระบบ / กรุณาเข้าสู่ระบบ";
     } else if (req.query.error === "inactive") {
         errorMessage = "บัญชีนี้ถูกระงับการใช้งาน";
     } else if (req.query.error === "wrongpassword") {
@@ -100,47 +127,34 @@ app.get("/", (req, res) => {
     res.render("login", { error: errorMessage });
 });
 
-app.get("/addUser", (req, res) => {
-    let errorMessage = null;
-    res.render("addUser", { error: errorMessage });
-});
-
 app.post("/login", (req, res) => {
     const { username, password } = req.body;
 
-    // I added Users.username to the SELECT statement so we can save it to the session
-    const sql = `SELECT Users.username, Users.password, Users.status
+    const sql = `SELECT Users.username, Users.password, Users.status, Users.role, Employees.first_name, Employees.last_name
         FROM Users 
         INNER JOIN Employees ON Users.employee_id = Employees.employee_id 
         WHERE Users.username = ? OR Employees.email = ?`;
 
-    // 1. Find the user in the database
     db.get(sql, [username, username], (err, row) => {
         if (err) return res.status(500).send(err.message);
+        if (!row) return res.redirect("/?error=notfound");
+        if (row.status === "Inactive") return res.redirect("/?error=inactive");
 
-        if (!row) {
-            return res.redirect("/?error=notfound");
-        }
-
-        if (row.status === "Inactive") {
-            return res.redirect("/?error=inactive");
-        }
-
-        // 2. Split the saved password string back into the salt and the hash
         const savedPassword = row.password;
         const [salt, originalHash] = savedPassword.split(":");
 
-        // 3. Hash the login attempt using the exact SAME salt
         crypto.scrypt(password, salt, 64, (err, derivedKey) => {
             if (err) return res.status(500).send("Hashing error");
 
             const attemptHash = derivedKey.toString("hex");
 
-            // 4. Compare the new hash to the original hash
             if (attemptHash === originalHash) {
+                // Save complete user info to session
                 req.session.user = {
                     username: row.username,
-                    role: row.role // Assuming your DB has a role column
+                    role: row.role,
+                    firstName: row.first_name,
+                    lastName: row.last_name
                 };
                 res.redirect("/dashboard");
             } else {
@@ -150,227 +164,828 @@ app.post("/login", (req, res) => {
     });
 });
 
-app.get("/receive", (req, res) => { 
+app.get("/receive", isAuthenticated, (req, res) => { 
     res.render("receive_stock");
 });
 
-app.post("/add", (req, res) => {
-    const { username, password } = req.body;
+app.get("/logout", (req, res) => {
+    req.session.destroy((err) => {
+        if (err) {
+            console.error("Error destroying session:", err);
+            return res.status(500).send("Error logging out.");
+        }
+        // Clear the cookie and go to login
+        res.clearCookie('connect.sid');
+        res.redirect("/");
+    });
+});
 
+// ==========================================
+// 3. PROTECTED ROUTES (Requires Login)
+// Apply the 'isAuthenticated' middleware to all below
+// ==========================================
+
+app.get("/dashboard", isAuthenticated, (req, res) => {
+    const sql = `
+        SELECT
+            -- 1. จำนวนสินค้าทั้งหมด
+            (SELECT COUNT(*) FROM Products) AS total_products,
+            
+            -- ดึงเวลาที่มีการทำรายการล่าสุด
+            (SELECT transaction_date FROM Transactions ORDER BY transaction_date DESC LIMIT 1) AS last_update,
+            
+            -- 2. สต็อกคงเหลือ (รวมจำนวนสินค้าในทุกล็อต)
+            (SELECT COALESCE(SUM(quantity), 0) FROM Lots) AS total_stock,
+            
+            -- สต็อกที่เพิ่ม/ลด ในวันนี้ (เทียบจากเมื่อวาน)
+            (SELECT COALESCE(SUM(
+                CASE 
+                    WHEN transaction_type = 'รับสินค้า' THEN change_amount 
+                    WHEN transaction_type = 'จ่ายสินค้า' THEN -change_amount
+                    ELSE 0 
+                END
+            ), 0) FROM Transactions WHERE date(transaction_date) = date('now', 'localtime')) AS daily_change,
+            
+            -- 3. สินค้าใกล้หมดอายุ (ภายใน 30 วัน)
+            (SELECT COUNT(*) FROM Lots 
+             WHERE quantity > 0 AND exp_date IS NOT NULL 
+             AND CAST(julianday(exp_date) - julianday(date('now', 'localtime')) AS INTEGER) BETWEEN 0 AND 30
+            ) AS expiring_soon,
+            
+            -- 4. สินค้าหมดอายุแล้ว (วันหมดอายุน้อยกว่าวันนี้)
+            (SELECT COUNT(*) FROM Lots 
+             WHERE quantity > 0 AND exp_date IS NOT NULL 
+             AND CAST(julianday(exp_date) - julianday(date('now', 'localtime')) AS INTEGER) < 0
+            ) AS expired
+    `;
+
+    db.get(sql, [], (err, row) => {
+        if (err) {
+            console.error("Dashboard Error:", err.message);
+            return res.status(500).send("เกิดข้อผิดพลาดในการโหลดข้อมูล Dashboard");
+        }
+
+        // จัดฟอร์แมตวันที่อัปเดตล่าสุดให้สวยงาม (เช่น 07/03/2026, 15:30)
+        let formattedLastUpdate = "ยังไม่มีข้อมูล";
+        if (row.last_update) {
+            const d = new Date(row.last_update);
+            formattedLastUpdate = d.toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' });
+        }
+
+        // เตรียมข้อมูลส่งไปที่ EJS
+        const dashData = {
+            totalProducts: row.total_products || 0,
+            lastUpdate: formattedLastUpdate,
+            totalStock: row.total_stock || 0,
+            dailyChange: row.daily_change || 0,
+            expiringSoon: row.expiring_soon || 0,
+            expired: row.expired || 0
+        };
+
+        // ส่งข้อมูล dashData ไปที่ไฟล์ mainpage.ejs
+        res.render("mainpage", { dashData: dashData });
+    });
+});
+app.get("/history", isAuthenticated, authorizeRoles(["Manager", "Staff"]), (req, res) => {
+    const sql = `
+        SELECT 
+            t.*, 
+            p.product_name,
+            e.first_name, 
+            e.last_name
+        FROM Transactions t
+        LEFT JOIN Products p ON t.product_id = p.product_id
+        LEFT JOIN Employees e ON t.employee_id = e.employee_id
+        ORDER BY t.transaction_date DESC
+    `;
+
+    db.all(sql, [], (err, rows) => {
+        if (err) {
+            console.error("Database Error:", err.message);
+            return res.status(500).send("เกิดข้อผิดพลาดในการดึงข้อมูลประวัติการทำรายการ");
+        }
+
+        // Pass the fetched rows to your history.ejs file as 'transactions'
+        res.render("history", { transactions: rows });
+    });
+});
+app.get("/report", isAuthenticated, authorizeRoles(["Manager"]), (req, res) => {
+    res.render("report")
+});
+app.get("/createReport/:type", isAuthenticated, authorizeRoles(["Manager"]), (req, res) => {
+    res.render("generateReport", {type:req.params.type})
+});
+app.get("/manageEdit", isAuthenticated, (req, res) => res.render("manageEdit"));
+app.get("/undefind", isAuthenticated, (req, res) => res.render("undefind")); // Typo kept for your routing
+
+app.get("/generate-report", isAuthenticated, authorizeRoles(["Manager"]), (req, res) => {
+    // รับค่าพารามิเตอร์ที่ส่งมาจาก Frontend
+    const { reportType, startDate, endDate, productName, brandId, sortBy, expireDays, transType, employee_name, productLeft,lotCode } = req.query;
+
+    let sql = "";
+    let queryParams = [];
+
+    // ==========================================
+    // 1. รายงานความเคลื่อนไหวของสินค้า (Inventory Movement)
+    // ==========================================
+    if (reportType === 'movement') {
+    // หมายเหตุ: สังเกตว่าผมเปลี่ยน t.quantity เป็น t.change_amount ตามโค้ดหน้า EJS ของคุณแล้ว
+    // (หากใน Database ของคุณชื่อคอลัมน์ยังเป็น quantity อยู่ ให้แก้เป็น t.quantity AS change_amount นะครับ)
+    sql = `
+        SELECT 
+            t.transaction_date, 
+            t.transaction_type, 
+            p.product_id, 
+            p.product_name, 
+            t.change_amount, 
+            e.first_name || ' ' || e.last_name AS employee_name
+        FROM Transactions t
+        LEFT JOIN Products p ON t.product_id = p.product_id
+        LEFT JOIN Employees e ON t.employee_id = e.employee_id
+        WHERE 1=1
+    `;
+
+    // 1. กรองตามวันที่
+    if (startDate) { 
+        sql += ` AND t.transaction_date >= ?`; 
+        queryParams.push(`${startDate} 00:00:00`); 
+    }
+    if (endDate) { 
+        sql += ` AND t.transaction_date <= ?`; 
+        queryParams.push(`${endDate} 23:59:59`); 
+    }
+    
+    // 2. กรองตามชื่อหรือรหัสสินค้า
+    if (productName) { 
+        sql += ` AND (p.product_id LIKE ? OR p.product_name LIKE ?)`; 
+        queryParams.push(`%${productName}%`, `%${productName}%`); 
+    }
+
+    // 3. กรองตามประเภทรายการ (รับสินค้า / จ่ายสินค้า)
+    if (transType) {
+        sql += ` AND t.transaction_type = ?`;
+        queryParams.push(type);
+    }
+
+    // 4. กรองตามชื่อ-นามสกุลผู้ทำรายการ
+    if (employee_name) {
+        sql += ` AND Concat(e.first_name, ' ', e.last_name)LIKE ?`;
+        queryParams.push(`%${employee_name.trim()}%`);
+    }
+
+    if (sortBy === 'date_asc') {
+        sql += ` ORDER BY t.transaction_date ASC`;
+    } else if (sortBy === 'type') {
+        sql += ` ORDER BY t.transaction_type ASC, t.transaction_date DESC`;
+    } else if (sortBy === 'product_name') {
+        sql += ` ORDER BY p.product_name ASC, t.transaction_date DESC`;
+    } else if (sortBy === 'amount_desc') {
+        // *หมายเหตุ: ถ้าคอลัมน์ในฐานข้อมูลคุณชื่อ quantity ให้เปลี่ยน t.change_amount เป็น t.quantity แทนนะครับ
+        sql += ` ORDER BY t.change_amount DESC`; 
+    } else if (sortBy === 'amount_asc') {
+        sql += ` ORDER BY t.change_amount ASC`;
+    } else {
+        // ค่าเริ่มต้น ถ้าไม่ได้เลือกอะไรให้เรียงวันที่ใหม่สุดขึ้นก่อน
+        sql += ` ORDER BY t.transaction_date DESC`;
+    }
+    // ==========================================
+    // 2. รายงานสต็อกสินค้าคงเหลือ (Stock Balance)
+    // ==========================================
+    } else if (reportType === 'stock') {
+        sql = `
+        SELECT 
+            p.product_id, 
+            p.product_name, 
+            c.category_name,
+            b.brand_name,
+            COALESCE(SUM(l.quantity), 0) AS total_quantity, 
+            p.cost_price,
+            (COALESCE(SUM(l.quantity), 0) * p.cost_price) AS total_value
+        FROM Products p
+        LEFT JOIN Categories c ON p.category_id = c.category_id
+        LEFT JOIN Brands b ON p.brand_id = b.brand_id
+        LEFT JOIN Lots l ON p.product_id = l.product_id
+        WHERE 1=1
+    `;
+    
+    if (productName) {
+        sql += ` AND (p.product_name LIKE ? OR p.product_id LIKE ?)`;
+        queryParams.push(`%${productName}%`, `%${productName}%`);
+    }
+    if (brandId) {
+        sql += ` AND p.brand_id = ?`;
+        queryParams.push(brandId);
+    }
+
+    
+    
+    sql += ` GROUP BY p.product_id `;
+
+    if (productLeft) {
+        sql += ` HAVING total_quantity <= ?`;
+        queryParams.push(Number(productLeft));
+    }
+
+    // 📌 จัดการเงื่อนไขการเรียงลำดับ (ORDER BY)
+    if (sortBy === 'product_name') {
+        sql += ` ORDER BY p.product_name ASC`;
+    } else if (sortBy === 'brand_name') {
+        sql += ` ORDER BY b.brand_name ASC`;
+    } else if (sortBy === 'category_name') {
+        sql += ` ORDER BY c.category_name ASC`;
+    } else if (sortBy === 'total_quantity_asc') {
+        sql += ` ORDER BY total_quantity ASC`;
+    } else if (sortBy === 'total_quantity_desc') {
+        sql += ` ORDER BY total_quantity DESC`;
+    } else {
+        // ค่าเริ่มต้น
+        sql += ` ORDER BY p.product_id ASC`;
+    }
+    // ==========================================
+    // 3. รายงานสินค้าใกล้หมดอายุ (Expiring Products)
+    // ==========================================
+    } else if (reportType === 'expire') {
+        const days = expireDays || 30;
+        sql = `
+            SELECT 
+                p.product_id, 
+                p.product_name,
+                b.brand_name,
+                l.lot_batch_code,
+                l.quantity, 
+                l.exp_date,
+                CAST(julianday(l.exp_date) - julianday(date('now', 'localtime')) AS INTEGER) AS days_remaining
+            FROM Lots l
+            LEFT JOIN Products p ON l.product_id = p.product_id
+            LEFT JOIN Brands b ON p.brand_id = b.brand_id
+            WHERE l.quantity > 0 
+              AND l.exp_date IS NOT NULL
+              AND CAST(julianday(l.exp_date) - julianday(date('now', 'localtime')) AS INTEGER) <= ?
+        `;
+        queryParams.push(days);
+
+        if (productName) {
+            sql += ` AND (p.product_name LIKE ? OR p.product_id LIKE ?)`;
+            queryParams.push(`%${productName}%`, `%${productName}%`);
+        }
+        // กรองตามแบรนด์
+        if (brandId) {
+            sql += ` AND p.brand_id = ?`;
+            queryParams.push(brandId);
+        }
+        // กรองตามรหัสล็อต
+        if (lotCode) {
+            sql += ` AND l.lot_batch_code LIKE ?`;
+            queryParams.push(`%${lotCode}%`);
+        }
+
+        // จัดการเงื่อนไขการเรียงลำดับ (ตาม value ใน EJS)
+        if (sortBy === 'product_name') {
+            sql += ` ORDER BY p.product_name ASC`;
+        } else if (sortBy === 'brand_name') {
+            sql += ` ORDER BY b.brand_name ASC`;
+        } else if (sortBy === 'exp_date_desc') {
+            sql += ` ORDER BY l.exp_date DESC`;
+        } else if (sortBy === 'exp_date_asc') {
+            sql += ` ORDER BY l.exp_date ASC`;
+        } else {
+            sql += ` ORDER BY p.product_id ASC`;
+        }
+
+    } else {
+        // ถ้าส่ง reportType มาผิดเงื่อนไข
+        return res.status(400).json({ error: "ประเภทรายงานไม่ถูกต้อง" });
+    }
+
+    // ==========================================
+    // ทำการ Execute Query และส่งข้อมูลกลับไปที่ EJS
+    // ==========================================
+    db.all(sql, queryParams, (err, rows) => {
+        if (err) {
+            console.error("Report Database Error:", err.message); // ดู Error ใน Terminal ของ VS Code
+            return res.status(500).json({ error: "เกิดข้อผิดพลาดในการดึงข้อมูลรายงาน" });
+        }
+
+        // Alternative Flow 1: ถ้าหาข้อมูลไม่เจอเลย
+        if (rows.length === 0) {
+            return res.status(404).json({ error: "ไม่พบข้อมูลในช่วงเวลาหรือเงื่อนไขที่เลือก" });
+        }
+
+        // ถ้าสำเร็จ ส่ง Data เป็น JSON กลับไปวาดตารางที่ Frontend
+        res.json(rows);
+    });
+});
+
+app.get("/export-report", isAuthenticated, authorizeRoles(["Manager"]), (req, res) => {
+    // 1. อย่าลืมรับค่า sortBy เพิ่มมาตรงนี้ด้วย
+    const { reportType, startDate, endDate, productName, brandId, sortBy, expireDays, type, employee_name, productLeft, lotCode } = req.query;
+    let queryParams = [];
+    let csvHeader = "";
+
+    if (reportType === 'movement') {
+        // ... (โค้ดรายงานความเคลื่อนไหวเดิมของคุณ) ...
+        sql = `
+        SELECT 
+            t.transaction_date, 
+            t.transaction_type, 
+            p.product_id, 
+            p.product_name, 
+            t.change_amount, 
+            e.first_name || ' ' || e.last_name AS employee_name
+        FROM Transactions t
+        LEFT JOIN Products p ON t.product_id = p.product_id
+        LEFT JOIN Employees e ON t.employee_id = e.employee_id
+        WHERE 1=1
+    `;
+
+    // 1. กรองตามวันที่
+    if (startDate) { 
+        sql += ` AND t.transaction_date >= ?`; 
+        queryParams.push(`${startDate} 00:00:00`); 
+    }
+    if (endDate) { 
+        sql += ` AND t.transaction_date <= ?`; 
+        queryParams.push(`${endDate} 23:59:59`); 
+    }
+    
+    // 2. กรองตามชื่อหรือรหัสสินค้า
+    if (productName) { 
+        sql += ` AND (p.product_id LIKE ? OR p.product_name LIKE ?)`; 
+        queryParams.push(`%${productName}%`, `%${productName}%`); 
+    }
+
+    // 3. กรองตามประเภทรายการ (รับสินค้า / จ่ายสินค้า)
+    if (type && type.trim() !== '') {
+        sql += ` AND t.transaction_type = ?`;
+        queryParams.push(type);
+    }
+
+    // 4. กรองตามชื่อ-นามสกุลผู้ทำรายการ
+    if (employee_name) {
+        sql += ` AND Concat(e.first_name, ' ', e.last_name)LIKE ?`;
+        queryParams.push(`%${employee_name.trim()}%`);
+    }
+
+    if (sortBy === 'date_asc') {
+        sql += ` ORDER BY t.transaction_date ASC`;
+    } else if (sortBy === 'type') {
+        sql += ` ORDER BY t.transaction_type ASC, t.transaction_date DESC`;
+    } else if (sortBy === 'product_name') {
+        sql += ` ORDER BY p.product_name ASC, t.transaction_date DESC`;
+    } else if (sortBy === 'amount_desc') {
+        // *หมายเหตุ: ถ้าคอลัมน์ในฐานข้อมูลคุณชื่อ quantity ให้เปลี่ยน t.change_amount เป็น t.quantity แทนนะครับ
+        sql += ` ORDER BY t.change_amount DESC`; 
+    } else if (sortBy === 'amount_asc') {
+        sql += ` ORDER BY t.change_amount ASC`;
+    } else {
+        // ค่าเริ่มต้น ถ้าไม่ได้เลือกอะไรให้เรียงวันที่ใหม่สุดขึ้นก่อน
+        sql += ` ORDER BY t.transaction_date DESC`;
+    }
+
+    // 📌 (เฉพาะใน Route /export-report) อย่าลืมอัปเดตบรรทัดการสร้าง CSV ด้วยนะครับ
+    csvHeader = "วันที่,ประเภทรายการ,รหัสสินค้า,ชื่อสินค้า,จำนวน,ผู้ทำรายการ\n";
+    
+
+    // ==========================================
+    // 2. แก้ไขรายงานสต็อกสินค้าตรงนี้
+    // ==========================================
+    } else if (reportType === 'stock') {
+        // เพิ่ม LEFT JOIN Brands เข้าไปเผื่อจัดเรียงตามแบรนด์
+        sql = `
+            SELECT 
+                p.product_id, 
+                p.product_name, 
+                c.category_name,
+                b.brand_name,
+                COALESCE(SUM(l.quantity), 0) AS total_quantity, 
+                p.cost_price, 
+                (COALESCE(SUM(l.quantity), 0) * p.cost_price) AS total_value
+            FROM Products p
+            LEFT JOIN Categories c ON p.category_id = c.category_id
+            LEFT JOIN Brands b ON p.brand_id = b.brand_id
+            LEFT JOIN Lots l ON p.product_id = l.product_id
+            WHERE 1=1
+        `;
+        
+        if (productName) {
+            sql += ` AND (p.product_name LIKE ? OR p.product_id LIKE ?)`;
+            queryParams.push(`%${productName}%`, `%${productName}%`);
+        }
+        if (brandId) {
+            sql += ` AND p.brand_id = ?`;
+            queryParams.push(brandId);
+        }
+        
+        sql += ` GROUP BY p.product_id `;
+
+        if (productLeft) {
+        sql += ` HAVING total_quantity <= ?`;
+        queryParams.push(Number(productLeft));
+    }
+
+        // 📌 เพิ่มเงื่อนไขการเรียงลำดับให้เหมือนตอนดึงข้อมูลเป๊ะๆ
+        if (sortBy === 'product_name') {
+            sql += ` ORDER BY p.product_name ASC`;
+        } else if (sortBy === 'brand_name') {
+            sql += ` ORDER BY b.brand_name ASC`;
+        } else if (sortBy === 'category_name') {
+            sql += ` ORDER BY c.category_name ASC`;
+        } else if (sortBy === 'total_quantity_asc') {
+            sql += ` ORDER BY total_quantity ASC`;
+        } else if (sortBy === 'total_quantity_desc') {
+            sql += ` ORDER BY total_quantity DESC`;
+        } else {
+            sql += ` ORDER BY p.product_id ASC`;
+        }
+        
+        csvHeader = "รหัสสินค้า,ชื่อสินค้า,แบรนด์,หมวดหมู่,คงเหลือ (ชิ้น),ต้นทุน/ชิ้น,มูลค่ารวม\n";
+
+    } else if (reportType === 'expire') {
+        // ... (โค้ดรายงานหมดอายุเดิมของคุณ) ...
+        const days = expireDays || 30;
+        sql = `
+            SELECT 
+                p.product_id, 
+                p.product_name,
+                b.brand_name,
+                l.lot_batch_code,
+                l.quantity, 
+                l.exp_date,
+                CAST(julianday(l.exp_date) - julianday(date('now', 'localtime')) AS INTEGER) AS days_remaining
+            FROM Lots l
+            LEFT JOIN Products p ON l.product_id = p.product_id
+            LEFT JOIN Brands b ON p.brand_id = b.brand_id
+            WHERE l.quantity > 0 
+              AND l.exp_date IS NOT NULL
+              AND CAST(julianday(l.exp_date) - julianday(date('now', 'localtime')) AS INTEGER) <= ?
+        `;
+        queryParams.push(days);
+
+        if (productName) {
+            sql += ` AND (p.product_name LIKE ? OR p.product_id LIKE ?)`;
+            queryParams.push(`%${productName}%`, `%${productName}%`);
+        }
+        // กรองตามแบรนด์
+        if (brandId) {
+            sql += ` AND p.brand_id = ?`;
+            queryParams.push(brandId);
+        }
+        // กรองตามรหัสล็อต
+        if (lotCode) {
+            sql += ` AND l.lot_batch_code LIKE ?`;
+            queryParams.push(`%${lotCode}%`);
+        }
+
+        // จัดการเงื่อนไขการเรียงลำดับ (ตาม value ใน EJS)
+        if (sortBy === 'product_name') {
+            sql += ` ORDER BY p.product_name ASC`;
+        } else if (sortBy === 'brand_name') {
+            sql += ` ORDER BY b.brand_name ASC`;
+        } else if (sortBy === 'exp_date_desc') {
+            sql += ` ORDER BY l.exp_date DESC`;
+        } else if (sortBy === 'exp_date_asc') {
+            sql += ` ORDER BY l.exp_date ASC`;
+        } else {
+            sql += ` ORDER BY p.product_id ASC`;
+        }
+        
+        csvHeader = "รหัสสินค้า,ชื่อสินค้า,แบรนด์,รหัสล็อต,จำนวน,วันหมดอายุ,เหลือเวลา (วัน)\n";
+    }
+
+    // ทำการ Query ข้อมูลจาก Database และสร้าง CSV ตามเดิม...
+    db.all(sql, queryParams, (err, rows) => {
+        if (err) {
+            console.error("Export DB Error:", err.message);
+            return res.status(500).send("เกิดข้อผิดพลาดจากฐานข้อมูล: " + err.message);
+        }
+        
+        if (!rows || rows.length === 0) {
+            return res.status(404).send("ไม่พบข้อมูลที่จะ Export");
+        }
+
+        let csvContent = csvHeader;
+        
+        rows.forEach(row => {
+            if (reportType === 'movement') {
+                csvContent += `"${row.transaction_date}","${row.transaction_type}","${row.product_id}","${row.product_name}","${row.change_amount}","${row.employee_name}"\n`;
+            } else if (reportType === 'stock') {
+                csvContent += `"${row.product_id}","${row.product_name}","${row.brand_name}","${row.category_name}","${row.total_quantity}","${row.cost_price}","${row.total_value}"\n`;
+            } else if (reportType === 'expire') {
+                csvContent += `"${row.product_id}","${row.product_name}","${row.brand_name}","${row.lot_id}","${row.quantity}","${row.exp_date}","${row.days_remaining}"\n`;
+            }
+        });
+
+        res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+        res.setHeader('Content-Disposition', `attachment; filename="report_${reportType}.csv"`);
+        res.send('\uFEFF' + csvContent);
+    });
+});
+
+// --- User Management Routes ---
+app.get("/manage", isAuthenticated, authorizeRoles(["Manager"]), (req, res) => {
+    const sql = `
+        SELECT u.*, e.employee_id, e.first_name, e.last_name
+        FROM Users u
+        LEFT JOIN Employees e ON u.employee_id = e.employee_id
+        ORDER BY e.employee_id ASC
+    `;
+    db.all(sql, [], (err, rows) => {
+        if (err) return res.status(500).send("เกิดข้อผิดพลาดในการดึงข้อมูลผู้ใช้งาน");
+        res.render("manage", { users: rows });
+    });
+});
+
+app.get("/addUser", isAuthenticated, authorizeRoles(["Manager"]), (req, res) => {
+    res.render("addUser", { error: null });
+});
+
+app.get("/add-user", isAuthenticated, authorizeRoles(["Manager"]), (req, res) => {
+    res.render("manageEdit", { user: null, title: 'เพิ่มผู้ใช้', path: '/add-user-data' });
+});
+
+app.post("/add-user-data", isAuthenticated, authorizeRoles(["Manager"]), (req, res) => {
+    const { employeeId, userName, password, fname, lname, email, phone, role } = req.body;
+    const status = "Active"; 
     const salt = crypto.randomBytes(16).toString("hex");
 
     crypto.scrypt(password, salt, 64, (err, derivedKey) => {
-        if (err) return res.status(500).send("Hashing error");
-
+        if (err) return res.status(500).send("เกิดข้อผิดพลาดในการเข้ารหัสรหัสผ่าน");
         const hash = derivedKey.toString("hex");
         const passwordToSave = `${salt}:${hash}`;
 
-        db.run(`INSERT INTO Users (username, password, role) VALUES (?, ?, ?)`, [username, passwordToSave, "Staff"], function (err) {
-            if (err) return console.error(err.message);
-            res.send("User registered securely without bcrypt!");
+        db.get(`SELECT employee_id FROM Employees WHERE employee_id = ?`, [employeeId], (err, row) => {
+            if (err) return res.status(500).send("Database Error");
+
+            if (row) {
+                const userSql = `INSERT INTO Users (username, password, role, employee_id, status) VALUES (?, ?, ?, ?, ?)`;
+                db.run(userSql, [userName, passwordToSave, role, employeeId, status], function(userErr) {
+                    if (userErr) return res.status(400).send("เกิดข้อผิดพลาด: ชื่อผู้ใช้นี้ (Username) มีคนใช้แล้ว");
+                    res.redirect("/manage");
+                });
+            } else {
+                db.serialize(() => {
+                    const empSql = `INSERT INTO Employees (employee_id, first_name, last_name, email, phone) VALUES (?, ?, ?, ?, ?)`;
+                    db.run(empSql, [employeeId, fname, lname, email, phone], function(empErr) {
+                        if (empErr) return res.status(400).send("เกิดข้อผิดพลาดในการสร้างข้อมูลพนักงาน");
+
+                        const userSql = `INSERT INTO Users (username, password, role, employee_id, status) VALUES (?, ?, ?, ?, ?)`;
+                        db.run(userSql, [userName, passwordToSave, role, employeeId, status], function(userErr) {
+                            if (userErr) return res.status(400).send("เกิดข้อผิดพลาด: ชื่อผู้ใช้นี้ (Username) มีคนใช้แล้ว");
+                            res.redirect("/manage");
+                        });
+                    });
+                });
+            }
         });
     });
 });
-app.get("/mainpage", (req, res) => {
-    res.render("mainpage");
+
+app.get('/edit-user/:id', isAuthenticated, authorizeRoles(["Manager"]), (req, res) => {
+    const targetUserId = req.params.id;
+    const sql = `
+        SELECT u.*, e.employee_id, e.first_name, e.last_name, e.email, e.phone
+        FROM Users u
+        LEFT JOIN Employees e ON u.employee_id = e.employee_id
+        WHERE u.user_id = ?
+    `;
+    db.get(sql, [targetUserId], (err, row) => {
+        if (err) return res.status(500).send("เกิดข้อผิดพลาดในการดึงข้อมูล");
+        if (!row) return res.status(404).send("ไม่พบผู้ใช้งานนี้");
+
+        res.render('manageEdit', { 
+            title: 'แก้ไขผู้ใช้งาน', 
+            path: `/update-user/${row.user_id}`, 
+            user: row 
+        });
+    });
 });
-app.get("/history", (req, res) => {
-    res.render("history");
+
+app.post('/update-user/:id', isAuthenticated, authorizeRoles(["Manager"]), (req, res) => {
+    const targetUserId = req.params.id;
+    const { employeeId, userName, password, fname, lname, email, phone, role } = req.body;
+
+    db.serialize(() => {
+        const updateEmpSql = `UPDATE Employees SET first_name = ?, last_name = ?, email = ?, phone = ? WHERE employee_id = ?`;
+        db.run(updateEmpSql, [fname, lname, email, phone, employeeId], function(empErr) {
+            if (empErr) return res.status(500).send("เกิดข้อผิดพลาดในการอัปเดตข้อมูลพนักงาน");
+
+            if (password && password.trim() !== "") {
+                const salt = crypto.randomBytes(16).toString("hex");
+                crypto.scrypt(password, salt, 64, (err, derivedKey) => {
+                    if (err) return res.status(500).send("Hashing error");
+                    const hash = derivedKey.toString("hex");
+                    const newPasswordToSave = `${salt}:${hash}`;
+
+                    const updateUserSql = `UPDATE Users SET username = ?, role = ?, password = ? WHERE user_id = ?`;
+                    db.run(updateUserSql, [userName, role, newPasswordToSave, targetUserId], function(userErr) {
+                        if (userErr) return res.status(400).send("เกิดข้อผิดพลาด: ชื่อผู้ใช้นี้ (Username) ถูกใช้งานแล้ว");
+                        res.redirect('/manage');
+                    });
+                });
+            } else {
+                const updateUserSql = `UPDATE Users SET username = ?, role = ? WHERE user_id = ?`;
+                db.run(updateUserSql, [userName, role, targetUserId], function(userErr) {
+                    if (userErr) return res.status(400).send("เกิดข้อผิดพลาด: ชื่อผู้ใช้นี้ (Username) ถูกใช้งานแล้ว");
+                    res.redirect('/manage');
+                });
+            }
+        });
+    });
 });
-app.get("/undefind", (req, res) => {
-    res.render("undefind");
+
+app.get("/delete-user/:userId", isAuthenticated, authorizeRoles(["Manager"]), (req, res) => {
+    const targetUserId = req.params.userId;
+    db.serialize(() => {
+        db.run(`DELETE FROM Users WHERE user_id = ?`, [targetUserId]);
+        res.redirect("/manage");
+    });
 });
-app.get("/manage", (req, res) => {
+
+app.get("/search/users", isAuthenticated, authorizeRoles(["Manager"]), (req, res) => {
     const id = req.query.id || '';
     const username = req.query.username || '';
     const name = req.query.name || '';
-    const job_title = req.query.job_title || '';
     const role = req.query.role || '';
 
-    // 2. Base query using WHERE 1=1
     let sql = `
-        SELECT 
-            u.username, 
-            u.role, 
-            u.status,
-            e.employee_id, 
-            e.first_name, 
-            e.last_name, 
-            e.job_title
+        SELECT u.username, u.role, u.status, e.employee_id, e.first_name, e.last_name
         FROM Users u
         LEFT JOIN Employees e ON u.employee_id = e.employee_id
         WHERE 1=1
     `;
-
     let queryParams = [];
 
-    // 3. Dynamically add filters if the user provided them
-    if (id.trim() !== '') {
-        sql += ` AND e.employee_id LIKE ?`;
-        queryParams.push(`%${id}%`); // Use % for partial matches
-    }
-    
-    if (username.trim() !== '') {
-        sql += ` AND u.username LIKE ?`;
-        queryParams.push(`%${username}%`);
-    }
-    
-    if (name.trim() !== '') {
-        // Search both first and last name for the text
-        sql += ` AND (e.first_name LIKE ? OR e.last_name LIKE ?)`;
-        queryParams.push(`%${name}%`, `%${name}%`);
-    }
-    
-    if (job_title.trim() !== '') {
-        sql += ` AND e.job_title = ?`; // Exact match for dropdowns
-        queryParams.push(job_title);
-    }
-    
+    if (id.trim() !== '') { sql += ` AND e.employee_id LIKE ?`; queryParams.push(`%${id}%`); }
+    if (username.trim() !== '') { sql += ` AND u.username LIKE ?`; queryParams.push(`%${username}%`); }
+    if (name.trim() !== '') { sql += ` AND (e.first_name LIKE ? OR e.last_name LIKE ?)`; queryParams.push(`%${name}%`, `%${name}%`); }
     if (role.trim() !== '') {
-        sql += ` AND u.role = ?`; // Exact match for dropdowns
+        let role = (role === "ผู้จัดการ") ? "Manager" : "Staff";
+        sql += ` AND u.role = ?`;
         queryParams.push(role);
     }
-
-    // 4. Add the Order By to the end
     sql += ` ORDER BY e.employee_id ASC`;
 
-    // 5. Execute the query
     db.all(sql, queryParams, (err, rows) => {
-        if (err) {
-            console.error("Database Error:", err.message);
-            return res.status(500).send("เกิดข้อผิดพลาดในการดึงข้อมูลผู้ใช้งาน");
-        }
-
-        // 6. Send the retrieved data to the EJS template
-        res.render("manage", { users: rows });
+        if (err) return res.status(500).json({ error: "เกิดข้อผิดพลาดในการดึงข้อมูล" });
+        res.render('userSection', { users: rows }, (renderErr, htmlContent) => {
+            if (renderErr) return res.status(500).json({ error: "Render error" });
+            res.json({ html: htmlContent });
+        });
     });
 });
-app.get("/manageEdit", (req, res) => {
-    res.render("manageEdit");
-});
-app.get("/report", (req, res) => {
-    res.render("report");
-});
-app.get("/createReport", (req, res) => {
-    res.render("createReport");
-});
 
-// --- NEW PROTECTED ROUTE: Dashboard ---
-app.get("/dashboard", (req, res) => {
+app.get("/search/transactions", isAuthenticated, authorizeRoles(["Manager"]), (req, res) => {
+    // 1. Grab values from the URL query string
+    const productNameSearch = req.query.productName || ''; 
+    const dateSearch = req.query.data || ''; // Maps to <input name="data">
+    const typeSearch = req.query.type || ''; // "รับสินค้า" or "จ่ายสินค้า"
+    const employeeNameSearch = req.query.employee_name || '';
 
-    if (!req.session.user) {
-        return res.redirect("/?error=notfound");
+    let sql = `
+        SELECT 
+            t.*, p.product_name, e.first_name, e.last_name
+        FROM Transactions t
+        LEFT JOIN Products p ON t.product_id = p.product_id
+        LEFT JOIN Employees e ON t.employee_id = e.employee_id
+        WHERE 1=1
+    `;
+    
+    let queryParams = [];
+
+    // Search by Product name or ID
+    if (productNameSearch.trim() !== '') {
+        sql += ` AND (p.product_name LIKE ? OR t.product_id LIKE ?)`;
+        queryParams.push(`%${productNameSearch}%`, `%${productNameSearch}%`);
     }
 
-    // If valid, let them in and pass their name to the frontend!
-    res.render("home", { username: req.session.user.username });
+    // Search by Transaction Type
+    if (typeSearch.trim() !== '') {
+        sql += ` AND t.transaction_type = ?`; // **NOTE: Change t.transaction_type to match your DB column (e.g., t.type)**
+        queryParams.push(typeSearch);
+    }
+
+    // Search by Date 
+    if (dateSearch.trim() !== '') {
+        // Since HTML date pickers send 'YYYY-MM-DD', we use LIKE to match it
+        sql += ` AND t.transaction_date LIKE ?`; // **NOTE: Change t.transaction_date to match your DB column**
+        queryParams.push(`%${dateSearch}%`); 
+    }
+
+    // Search by Employee Name (First Name, Last Name, or Username)
+    if (employeeNameSearch.trim() !== '') {
+        sql += ` AND Concat(e.first_name, ' ', e.last_name)LIKE ?`;
+        queryParams.push(`%${employeeNameSearch.trim()}%`);
+    }
+
+    // Sort newest to oldest
+    sql += ` ORDER BY t.transaction_date DESC`;
+
+    db.all(sql, queryParams, (err, rows) => {
+        if (err) {
+            console.error("Database Error:", err.message); // This will print SQL errors in your VS Code terminal
+            return res.status(500).json({ error: "เกิดข้อผิดพลาดในการค้นหาประวัติ" });
+        }
+
+        res.render('transactionSection', { transactions: rows }, (renderErr, htmlContent) => {
+            if (renderErr) {
+                console.error("Render Error:", renderErr.message); // This will print EJS errors in your terminal
+                return res.status(500).json({ error: "Render error" });
+            }
+            res.json({ html: htmlContent });
+        });
+    });
 });
-// --------------------------------------
 
-app.get("/product", (req, res) => {
-    lastProductQuery = null;
-    lastCountQuery = null;
-    lastSearchText = null;
-    const limit = 18;
-    const page = 1;
-    const offset = 0;
+app.get('/toggle-ban/:userid/:status', isAuthenticated, authorizeRoles(["Manager"]), (req, res) => {
+    const targetUserId = req.params.userid;
+    const status = req.params.status; 
+    
+    if (status !== 'Active' && status !== 'Inactive') {
+        return res.status(400).send({ success: false, error: 'สถานะไม่ถูกต้อง' });
+    }
+    let newStatus = status === 'Inactive' ? 'Active' : 'Inactive'
+    const sql = `UPDATE Users SET status = ? WHERE user_id = ?`;
+    
+    db.run(sql, [newStatus, targetUserId], function(err) {
+        if (err) return res.status(500).send({ success: false, error: 'Database Error' });
+        if (this.changes === 0) return res.status(404).send({ success: false, error: 'ไม่พบผู้ใช้งานนี้' });
+        res.redirect('/manage')
+    });
+});
 
-    const query = `SELECT p.product_name AS product_name, p.img_path AS img_path, p.product_id AS product_id, c.category_name AS category_name, b.brand_name AS brand_name, COALESCE(SUM(l.quantity), 0) AS total_quantity
-                FROM Products p 
-                LEFT JOIN Categories c ON p.category_id = c.category_id 
-                LEFT JOIN Brands b ON p.brand_id = b.brand_id 
-                LEFT JOIN Lots l ON p.product_id = l.product_id
-                GROUP BY p.product_id ORDER BY p.product_name ASC
-                LIMIT ? OFFSET ?`;
+// --- Product Routes ---
+app.get("/product", isAuthenticated, authorizeRoles(["Manager", "Staff"]), (req, res) => {
+    const limit = 18; const page = 1; const offset = 0;
+    const query = `
+        SELECT p.product_name AS product_name, p.img_path AS img_path, p.product_id AS product_id, 
+               c.category_name AS category_name, b.brand_name AS brand_name, COALESCE(SUM(l.quantity), 0) AS total_quantity
+        FROM Products p 
+        LEFT JOIN Categories c ON p.category_id = c.category_id 
+        LEFT JOIN Brands b ON p.brand_id = b.brand_id 
+        LEFT JOIN Lots l ON p.product_id = l.product_id
+        GROUP BY p.product_id ORDER BY p.product_name ASC
+        LIMIT ? OFFSET ?`;
 
     const countQuery = `SELECT COUNT(*) AS count FROM products`
 
-    lastProductQuery = query;
-    lastCountQuery = countQuery;
-
     db.all(countQuery, (err, row) => {
         if (err) return res.status(500).send("Database error");
-
         const totalPages = Math.ceil(row[0].count / limit);
-
         db.all(query, [limit, offset], (err, rows) => {
             if (err) return res.status(500).send("Database error");
             res.render('showProduct', {
-                data: rows, categories: global_categories,
-                brands: global_brands, currentPage: page, totalPages: totalPages
+                data: rows, 
+                currentPage: page, totalPages: totalPages
             });
         });
     });
 });
 
+app.get('/search', isAuthenticated, authorizeRoles(["Manager", "Staff"]), (req, res) => {
+    const q = req.query.q || ''; const category = req.query.category || ''; const brand = req.query.brand || '';
+    const limit = 18; const page = 1; const offset = 0;
 
+    let sql = `
+        SELECT p.product_name AS product_name, p.img_path AS img_path, p.product_id AS product_id, 
+               c.category_name AS category_name, b.brand_name AS brand_name, COALESCE(SUM(l.quantity), 0) AS total_quantity
+        FROM Products p 
+        LEFT JOIN Categories c ON p.category_id = c.category_id 
+        LEFT JOIN Brands b ON p.brand_id = b.brand_id 
+        LEFT JOIN Lots l ON p.product_id = l.product_id
+        WHERE 1=1`;
 
-app.get('/search', (req, res) => {
-    // 1. Grab all values from the URL
-    const q = req.query.q || '';
-    const category = req.query.category || '';
-    const brand = req.query.brand || '';
-
-    const limit = 18;
-    const page = 1;
-    const offset = 0;
-
-    // 2. Base queries using WHERE 1=1
-    let sql = `SELECT p.product_name AS product_name, p.img_path AS img_path, p.product_id AS product_id, c.category_name AS category_name, b.brand_name AS brand_name, COALESCE(SUM(l.quantity), 0) AS total_quantity
-               FROM Products p 
-               LEFT JOIN Categories c ON p.category_id = c.category_id 
-               LEFT JOIN Brands b ON p.brand_id = b.brand_id 
-               LEFT JOIN Lots l ON p.product_id = l.product_id
-               WHERE 1=1`;
-
-    // Use COUNT(DISTINCT) so we don't accidentally count lots instead of products
-    let countQuery = `SELECT COUNT(*) AS count 
-                      FROM Products p 
-                      LEFT JOIN Categories c ON p.category_id = c.category_id 
-                      LEFT JOIN Brands b ON p.brand_id = b.brand_id
-                      WHERE 1=1`;
+    let countQuery = `
+        SELECT COUNT(*) AS count 
+        FROM Products p 
+        LEFT JOIN Categories c ON p.category_id = c.category_id 
+        LEFT JOIN Brands b ON p.brand_id = b.brand_id
+        WHERE 1=1`;
 
     let queryParams = [];
 
-    // 3. Dynamically add filters if the user provided them
     if (q.trim() !== '') {
         sql += ` AND (p.product_name LIKE ? OR p.product_id LIKE ?)`;
         countQuery += ` AND (p.product_name LIKE ? OR p.product_id LIKE ?)`;
         queryParams.push(`%${q}%`, `%${q}%`);
     }
     if (category.trim() !== '') {
-        sql += ` AND c.category_name = ?`;
-        countQuery += ` AND c.category_name = ?`;
-        queryParams.push(category);
+        sql += ` AND c.category_name = ?`; countQuery += ` AND c.category_name = ?`; queryParams.push(category);
     }
     if (brand.trim() !== '') {
-        sql += ` AND b.brand_name = ?`;
-        countQuery += ` AND b.brand_name = ?`;
-        queryParams.push(brand);
+        sql += ` AND b.brand_name = ?`; countQuery += ` AND b.brand_name = ?`; queryParams.push(brand);
     }
 
-    // 4. Add the Group By and Order By to the end
     sql += ` GROUP BY p.product_id ORDER BY p.product_name ASC`;
 
-    // 5. Save state for pagination
-    lastProductQuery = sql;
-    lastCountQuery = countQuery;
-    lastQueryParams = queryParams;
-
-    // 6. Execute Count
     db.get(countQuery, queryParams, (err, row) => {
         if (err) return res.status(500).json({ error: "Database error" });
         const totalPages = Math.ceil(row.count / limit);
-
-        // 7. Add Limit and Offset and execute main query
         const finalSql = sql + ` LIMIT ? OFFSET ?`;
-        const finalParams = [...queryParams, limit, offset]; // Unpack array using spread operator
+        const finalParams = [...queryParams, limit, offset]; 
 
         db.all(finalSql, finalParams, (err, rows) => {
             if (err) return res.status(500).json({ error: "Database error" });
-            res.render('productSection', {
-                data: rows, currentPage: page, totalPages: totalPages
-            }, (err, html) => {
+            res.render('productSection', { data: rows, currentPage: page, totalPages: totalPages }, (err, html) => {
                 if (err) return res.status(500).json({ error: "Render error" });
                 res.json({ html: html });
             });
@@ -378,216 +993,125 @@ app.get('/search', (req, res) => {
     });
 });
 
-app.get('/edit-product/:id', (req, res) => {
-    fetch(`http://localhost:${port}/api/product/${req.params.id}`)
-        .then(response => response.json())
-        .then(data => {
-            res.render('editProduct', { product: data, title: 'แก้ไขสินค้า', brands: global_brands, categories: global_categories, suppliers:global_supplier, url_path : "/update-product"});
-        })
-        .catch(error => {
-            console.error('Error loading page:', error);
-        })
-});
-
-app.get('/add-peoduct', (req, res) => {
+// Fixed typo from /add-peoduct to /add-product
+app.get('/add-product', isAuthenticated, authorizeRoles(["Manager", "Staff"]), (req, res) => {
     db.get(`SELECT product_id FROM Products WHERE product_id LIKE 'B%' ORDER BY product_id DESC LIMIT 1`, [], (err, row) => {
-        if (err) {
-            console.error("Database Error:", err);
-            return res.status(500).send("เกิดข้อผิดพลาดในการสร้างรหัสสินค้า");
-        }
+        if (err) return res.status(500).send("เกิดข้อผิดพลาดในการสร้างรหัสสินค้า");
 
-        let newProductId = "B000001"; // Default starting ID if the database is completely empty
-
-        // 2. If we found a previous ID (like "B0096286"), calculate the next one
+        let newProductId = "B000001"; 
         if (row && row.product_id) {
-            // Cut off the 'B' (leaves us with "0096286")
             const numberString = row.product_id.substring(1);
-            
-            // Convert to a real number and add 1 (becomes 96287)
             const nextNumber = parseInt(numberString, 10) + 1;
-            
-            // Format it back to 6 digits by padding with zeros, then stick the 'B' back on
             newProductId = "B" + String(nextNumber).padStart(6, '0');
         }
 
-        // 3. Create a dummy product object so the EJS file doesn't crash 
-        // when it tries to read product.product_name, etc.
         const newProductTemplate = {
-            product_id: newProductId, // <-- Here is our auto-generated ID!
-            product_name: "",
-            brand_name: "",
-            category_name: "",
-            supplier_name: "",
-            net_content: "",
-            cost_price: "",
-            selling_price: "",
-            fda_number: "",
-            img_path: null
+            product_id: newProductId, product_name: "", brand_name: "", category_name: "", supplier_name: "",
+            net_content: "", cost_price: "", selling_price: "", fda_number: "", img_path: null
         };
 
-        // 4. Render the page with the prepopulated object
         res.render('editProduct', { 
-            product: newProductTemplate, 
-            title: 'เพิ่มสินค้า', 
-            brands: global_brands, 
-            categories: global_categories, 
-            suppliers: global_supplier,
-            url_path : "/add-product-data"
+            product: newProductTemplate, title: 'เพิ่มสินค้า', url_path : "/add-product-data"
         });
     });
 });
 
-// --- 2. THE PAGINATION ROUTE ---
-app.get('/fetch-product/:page', (req, res) => {
-    // 1. Grab pagination AND search values from the request
-    const limit = 18;
-    const page = parseInt(req.params.page) || 1;
-    const offset = (page - 1) * limit;
+app.post("/add-product-data", isAuthenticated, authorizeRoles(["Manager", "Staff"]), uploader.single('product_image'), (req, res) => {
+    const { code, name, brand, category, supplier, net_content, cost_price, selling_price, fda_no } = req.body;
+    const imagePath = req.file ? req.file.filename : null;
 
-    const q = req.query.q || '';
-    const category = req.query.category || '';
-    const brand = req.query.brand || '';
+    // 1. FIRST CHECK: Does this product name already exist?
+    db.get(`SELECT product_name FROM Products WHERE product_name = ?`, [name], (checkErr, row) => {
+        if (checkErr) {
+            // Clean up image if DB crashes
+            if (imagePath) fs.unlink(path.join(__dirname, 'public/img/product_image', imagePath), () => {});
+            return res.status(500).send("เกิดข้อผิดพลาดในการตรวจสอบชื่อสินค้า");
+        }
 
-    // 2. Base queries
-    let sql = `SELECT p.product_name AS product_name, p.img_path AS img_path, p.product_id AS product_id, c.category_name AS category_name, b.brand_name AS brand_name, COALESCE(SUM(l.quantity), 0) AS total_quantity
-               FROM Products p 
-               LEFT JOIN Categories c ON p.category_id = c.category_id 
-               LEFT JOIN Brands b ON p.brand_id = b.brand_id 
-               LEFT JOIN Lots l ON p.product_id = l.product_id
-               WHERE 1=1`;
+        if (row) {
+            // SCENARIO A: Product name already exists!
+            // Delete the image that Multer just saved so we don't waste space
+            if (imagePath) {
+                fs.unlink(path.join(__dirname, 'public/img/product_image', imagePath), (unlinkErr) => {
+                    if (unlinkErr && unlinkErr.code !== 'ENOENT') console.error("Failed to delete orphaned image:", unlinkErr);
+                });
+            }
+            return res.status(400).send("เกิดข้อผิดพลาด: ชื่อสินค้านี้มีอยู่ในระบบแล้ว");
+        }
 
-    let countQuery = `SELECT COUNT(*) AS count 
-                      FROM Products p 
-                      LEFT JOIN Categories c ON p.category_id = c.category_id 
-                      LEFT JOIN Brands b ON p.brand_id = b.brand_id
-                      WHERE 1=1`;
+        // SCENARIO B: Product name is unique. Proceed with INSERT.
+        const sql = `
+            INSERT INTO Products (
+                product_id, product_name, brand_id, category_id, supplier_id, 
+                net_content, cost_price, selling_price, fda_number, img_path
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `;
+        const params = [code, name, brand, category, supplier, net_content, cost_price, selling_price, fda_no, imagePath];
 
-    let queryParams = [];
+        db.run(sql, params, function(err) {
+            if (err) {
+                // Also clean up the image if the insert fails (e.g., duplicate product ID)
+                if (imagePath) {
+                    fs.unlink(path.join(__dirname, 'public/img/product_image', imagePath), () => {});
+                }
 
-    // 3. Apply filters
-    if (q.trim() !== '') {
-        sql += ` AND (p.product_name LIKE ? OR p.product_id LIKE ?)`;
-        countQuery += ` AND (p.product_name LIKE ? OR p.product_id LIKE ?)`;
-        queryParams.push(`%${q}%`, `%${q}%`);
-    }
-    if (category.trim() !== '') {
-        sql += ` AND c.category_name = ?`;
-        countQuery += ` AND c.category_name = ?`;
-        queryParams.push(category);
-    }
-    if (brand.trim() !== '') {
-        sql += ` AND b.brand_name = ?`;
-        countQuery += ` AND b.brand_name = ?`;
-        queryParams.push(brand);
-    }
+                if (err.message.includes("UNIQUE constraint failed: Products.product_id")) {
+                    return res.status(400).send("เกิดข้อผิดพลาด: รหัสสินค้านี้มีอยู่ในระบบแล้ว");
+                }
+                return res.status(500).send("เกิดข้อผิดพลาดในการเพิ่มสินค้าใหม่");
+            }
+            
+            // Success!
+            res.redirect("/product");
+        });
+    });
+});
 
-    sql += ` GROUP BY p.product_id ORDER BY p.product_name ASC`;
-
-    // 4. Execute the count, then the main query
-    db.get(countQuery, queryParams, (err, row) => {
-        if (err) return res.status(500).json({ error: "Database error" });
-        const totalPages = Math.ceil(row.count / limit);
-
-        const finalSql = sql + ` LIMIT ? OFFSET ?`;
-        const finalParams = [...queryParams, limit, offset];
-
-        db.all(finalSql, finalParams, (err, rows) => {
-            if (err) return res.status(500).json({ error: "Database error" });
-            res.render('productSection', {
-                data: rows, currentPage: page, totalPages: totalPages
-            }, (err, html) => {
-                if (err) return res.status(500).json({ error: "Render error" });
-                res.json({ html: html });
+app.get('/edit-product/:id', isAuthenticated, authorizeRoles(["Manager", "Staff"]), (req, res) => {
+    // Note: Since this fetch is hitting your own API, passing cookies might be required if the API route is also protected.
+    // The cleanest way is to just do a DB call here instead of an internal fetch, but I've kept it as requested.
+    fetch(`http://localhost:${port}/api/product/${req.params.id}`, { headers: { cookie: req.headers.cookie }})
+        .then(response => response.json())
+        .then(data => {
+            res.render('editProduct', { 
+                product: data, title: 'แก้ไขสินค้า',  
+                url_path : "/update-product"
             });
-        });
-    });
+        })
+        .catch(error => console.error('Error loading page:', error))
 });
 
-app.get("/api/product/:id", (req, res) => {
-    const productId = req.params.id;
+app.post("/update-product", isAuthenticated, authorizeRoles(["Manager", "Staff"]), uploader.single('product_image'), (req, res) => {
+    const { code, name, brand, category, supplier, net_content, cost_price, selling_price, fda_no } = req.body;
 
-    // We join tables here too, just in case you want to show Brand/Category names
-    const query = `
-    SELECT p.*, c.category_name, b.brand_name, s.supplier_name, COALESCE(SUM(l.quantity), 0) AS total_quantity
-    FROM Products p
-    LEFT JOIN Categories c ON p.category_id = c.category_id
-    LEFT JOIN Brands b ON p.brand_id = b.brand_id
-    LEFT JOIN Suppliers s ON p.supplier_id = s.supplier_id
-    LEFT JOIN Lots l ON p.product_id = l.product_id
-    WHERE p.product_id = ?
-    GROUP BY p.product_id
-`;
-    db.get(query, [productId], (err, row) => {
-        if (err) {
-            console.error(err.message);
-            return res.status(500).json({ error: "Database error" });
-        }
-        if (!row) {
-            return res.status(404).json({ error: "Product not found" });
-        }
-        // Send the data back as a JSON object
-        console.log(row);
-        res.json(row);
-    });
-});
-
-app.post("/update-product", uploader.single('product_image'), (req, res) => {
-    
-    const { 
-        code, name, brand, category, supplier, 
-        net_content, cost_price, selling_price, fda_no 
-    } = req.body;
-
-    // SCENARIO A: They uploaded a NEW image
     if (req.file) {
         const newImagePath = req.file.filename;
-
-        // 1. First, find out what the OLD image was
         db.get(`SELECT img_path FROM Products WHERE product_id = ?`, [code], (err, row) => {
-            if (err) {
-                console.error("Database Error:", err);
-                return res.status(500).send("เกิดข้อผิดพลาดในการดึงข้อมูลรูปภาพเก่า");
-            }
+            if (err) return res.status(500).send("เกิดข้อผิดพลาดในการดึงข้อมูลรูปภาพเก่า");
 
-            // 2. If an old image exists, delete it from the folder!
             if (row && row.img_path) {
                 const oldImageFullPath = path.join(__dirname, 'public/img/product_image', row.img_path);
-                
-                // fs.unlink deletes the file. 
                 fs.unlink(oldImageFullPath, (unlinkErr) => {
-                    // We ignore 'ENOENT' (Error NO ENTry) which just means the file was already missing
-                    if (unlinkErr && unlinkErr.code !== 'ENOENT') {
-                        console.error("Failed to delete old image:", unlinkErr);
-                    } else {
-                        console.log("Old image deleted successfully.");
-                    }
+                    if (unlinkErr && unlinkErr.code !== 'ENOENT') console.error("Failed to delete old image:", unlinkErr);
                 });
             }
 
-            // 3. Now, update the database with the NEW image path
             const sql = `
-                UPDATE Products 
-                SET 
+                UPDATE Products SET 
                     product_name = ?, brand_id = ?, category_id = ?, supplier_id = ?, 
-                    net_content = ?, cost_price = ?, selling_price = ?, fda_number = ?, 
-                    img_path = ? 
+                    net_content = ?, cost_price = ?, selling_price = ?, fda_number = ?, img_path = ? 
                 WHERE product_id = ?
             `;
             const params = [name, brand, category, supplier, net_content, cost_price, selling_price, fda_no, newImagePath, code];
 
             db.run(sql, params, function(err) {
                 if (err) return res.status(500).send("เกิดข้อผิดพลาดในการบันทึกข้อมูลสินค้า");
-                console.log(`Product ${code} updated with new image!`);
                 res.redirect("/product"); 
             });
         });
-
     } else {
-        // SCENARIO B: They did NOT upload a new image.
-        // Keep the existing code you already had for this part!
         const sql = `
-            UPDATE Products 
-            SET 
+            UPDATE Products SET 
                 product_name = ?, brand_id = ?, category_id = ?, supplier_id = ?, 
                 net_content = ?, cost_price = ?, selling_price = ?, fda_number = ?
             WHERE product_id = ?
@@ -596,113 +1120,28 @@ app.post("/update-product", uploader.single('product_image'), (req, res) => {
 
         db.run(sql, params, function(err) {
             if (err) return res.status(500).send("เกิดข้อผิดพลาดในการบันทึกข้อมูลสินค้า");
-            console.log(`Product ${code} updated (no image change).`);
             res.redirect("/product"); 
         });
     }
 });
 
-app.post("/add-product-data", uploader.single('product_image'), (req, res) => {
-    const { 
-        code,           // product_id (e.g., B000001)
-        name,           // product_name
-        brand,          // brand_id
-        category,       // category_id
-        supplier,       // supplier_id
-        net_content, 
-        cost_price, 
-        selling_price, 
-        fda_no 
-    } = req.body;
-
-    // 2. Handle the image path
-    // If the user uploaded an image, save the new filename. If they skipped it, set it to null.
-    const imagePath = req.file ? req.file.filename : null;
-
-    // 3. Prepare the SQL INSERT statement
-    const sql = `
-        INSERT INTO Products (
-            product_id, 
-            product_name, 
-            brand_id, 
-            category_id, 
-            supplier_id, 
-            net_content, 
-            cost_price, 
-            selling_price, 
-            fda_number, 
-            img_path
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `;
-
-    const params = [
-        code, 
-        name, 
-        brand, 
-        category, 
-        supplier, 
-        net_content, 
-        cost_price, 
-        selling_price, 
-        fda_no, 
-        imagePath
-    ];
-
-    // 4. Execute the insert
-    db.run(sql, params, function(err) {
-        if (err) {
-            console.error("Database Insert Error:", err.message);
-            
-            // If the user somehow submitted a product ID that already exists, SQLite will throw a UNIQUE constraint error
-            if (err.message.includes("UNIQUE constraint failed: Products.product_id")) {
-                return res.status(400).send("เกิดข้อผิดพลาด: รหัสสินค้านี้มีอยู่ในระบบแล้ว");
-            }
-
-            return res.status(500).send("เกิดข้อผิดพลาดในการเพิ่มสินค้าใหม่");
-        }
-
-        console.log(`New product added successfully! ID: ${code}`);
-        
-        // 5. Redirect back to the main product catalog after successful insertion
-        res.redirect("/product");
-    });
-});
-
-app.delete("/delete-product/:id", (req, res) => {
+app.delete("/delete-product/:id", isAuthenticated, authorizeRoles(["Manager", "Staff"]), (req, res) => {
     const productId = req.params.id;
-
-    // 1. Get the image path
     db.get(`SELECT img_path FROM Products WHERE product_id = ?`, [productId], (err, row) => {
         if (err) return res.status(500).json({ error: "Database Error" });
 
-        // 2. Delete linked data (Lots) so the database doesn't block you
         db.serialize(() => {
-            
-            // A. Delete Transactions linked to this product's lots
             db.run(`DELETE FROM Transactions WHERE product_id = ?`, [productId]);
-            
-            // B. Delete the Lots
             db.run(`DELETE FROM Lots WHERE product_id = ?`, [productId]);
-            
-            // C. Finally, Delete the Product itself
             db.run(`DELETE FROM Products WHERE product_id = ?`, [productId], function(deleteErr) {
-                if (deleteErr) {
-                    console.error("Delete Error:", deleteErr);
-                    // FIXED: Send an error JSON instead of using res.send for fetch requests
-                    return res.status(500).json({ error: "เกิดข้อผิดพลาดในการลบสินค้า" }); 
-                }
+                if (deleteErr) return res.status(500).json({ error: "เกิดข้อผิดพลาดในการลบสินค้า" }); 
 
-                // D. If the database delete was successful, wipe the image from the folder!
                 if (row && row.img_path) {
                     const imagePath = path.join(__dirname, 'public/img/product_image', row.img_path);
                     fs.unlink(imagePath, (unlinkErr) => {
                         if (unlinkErr && unlinkErr.code !== 'ENOENT') console.error("Failed to delete image:", unlinkErr);
                     });
                 }
-
-                console.log(`Product ${productId} completely wiped from existence.`);
-                
-                // FIXED: Send a 200 OK status back so the frontend JS knows it's safe to reload the page
                 res.sendStatus(200); 
             });
         });
@@ -735,29 +1174,6 @@ app.get('/receive/add/:id', (req, res) => {
     });
 });
 
-app.use(express.urlencoded({ extended: true }));
-app.use(express.json());
-// ตรวจสอบและสร้างตาราง stock หากยังไม่มีอยู่
-db.serialize(() => {
-    db.run(`CREATE TABLE IF NOT EXISTS stock (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        brand_id INTEGER,
-        quantity INTEGER,
-        lot_number TEXT,
-        mfd_date TEXT,
-        exp_date TEXT,
-        supplier TEXT,
-        remark TEXT,
-        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
-    )`, 
-    (err) => {
-        if (err) {
-            console.error("สร้างตารางไม่สำเร็จ:", err.message);
-        } else {
-            console.log("ตาราง stock พร้อมใช้งานแล้ว");
-        }
-    });
-});
 app.post('/save-stock', (req, res) => {
     console.log("ข้อมูลที่รับมา:", req.body);
 
@@ -806,6 +1222,56 @@ app.post('/withdraw/confirm', (req, res) => {
 app.get('/scan', (req, res) => {
     res.render('scan');
 });
+app.get('/fetch-product/:page', isAuthenticated, authorizeRoles(["Manager", "Staff"]), (req, res) => {
+    const limit = 18; const page = parseInt(req.params.page) || 1; const offset = (page - 1) * limit;
+    const q = req.query.q || ''; const category = req.query.category || ''; const brand = req.query.brand || '';
+
+    let sql = `SELECT p.product_name AS product_name, p.img_path AS img_path, p.product_id AS product_id, c.category_name AS category_name, b.brand_name AS brand_name, COALESCE(SUM(l.quantity), 0) AS total_quantity
+               FROM Products p LEFT JOIN Categories c ON p.category_id = c.category_id LEFT JOIN Brands b ON p.brand_id = b.brand_id LEFT JOIN Lots l ON p.product_id = l.product_id WHERE 1=1`;
+    let countQuery = `SELECT COUNT(*) AS count FROM Products p LEFT JOIN Categories c ON p.category_id = c.category_id LEFT JOIN Brands b ON p.brand_id = b.brand_id WHERE 1=1`;
+    let queryParams = [];
+
+    if (q.trim() !== '') { sql += ` AND (p.product_name LIKE ? OR p.product_id LIKE ?)`; countQuery += ` AND (p.product_name LIKE ? OR p.product_id LIKE ?)`; queryParams.push(`%${q}%`, `%${q}%`); }
+    if (category.trim() !== '') { sql += ` AND c.category_name = ?`; countQuery += ` AND c.category_name = ?`; queryParams.push(category); }
+    if (brand.trim() !== '') { sql += ` AND b.brand_name = ?`; countQuery += ` AND b.brand_name = ?`; queryParams.push(brand); }
+
+    sql += ` GROUP BY p.product_id ORDER BY p.product_name ASC`;
+
+    db.get(countQuery, queryParams, (err, row) => {
+        if (err) return res.status(500).json({ error: "Database error" });
+        const totalPages = Math.ceil(row.count / limit);
+        const finalSql = sql + ` LIMIT ? OFFSET ?`;
+        const finalParams = [...queryParams, limit, offset];
+
+        db.all(finalSql, finalParams, (err, rows) => {
+            if (err) return res.status(500).json({ error: "Database error" });
+            res.render('productSection', { data: rows, currentPage: page, totalPages: totalPages }, (err, html) => {
+                if (err) return res.status(500).json({ error: "Render error" });
+                res.json({ html: html });
+            });
+        });
+    });
+});
+
+app.get("/api/product/:id", isAuthenticated, authorizeRoles(["Manager", "Staff"]), (req, res) => {
+    const productId = req.params.id;
+    const query = `
+        SELECT p.*, c.category_name, b.brand_name, s.supplier_name, COALESCE(SUM(l.quantity), 0) AS total_quantity
+        FROM Products p
+        LEFT JOIN Categories c ON p.category_id = c.category_id
+        LEFT JOIN Brands b ON p.brand_id = b.brand_id
+        LEFT JOIN Suppliers s ON p.supplier_id = s.supplier_id
+        LEFT JOIN Lots l ON p.product_id = l.product_id
+        WHERE p.product_id = ?
+        GROUP BY p.product_id
+    `;
+    db.get(query, [productId], (err, row) => {
+        if (err) return res.status(500).json({ error: "Database error" });
+        if (!row) return res.status(404).json({ error: "Product not found" });
+        res.json(row);
+    });
+});
+
 
 app.get('/expiry', (req, res) => {
     res.render('expiry_monitor');
