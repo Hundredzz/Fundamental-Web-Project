@@ -1,28 +1,26 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <%- include('head') %>
     <title>เบิกสินค้าออกคลัง</title>
     <link rel="stylesheet" href="/css/withdraw_layout.css">
     <link rel="stylesheet" href="/css/withdraw_branch.css">
-    <link rel="stylesheet" href="/css/nav.css">
 </head>
 <body>
     <%- include('nav') %>
-    <div class="main-content">
+    <div class="main-content" id="main-content">
     <h1 class="header-title">เบิกสินค้าออกคลัง</h1>
     <div class="branch-card">
-        <p>กรุณาเลือกสาขาปลายทาง</p>
+        <h2>กรุณาเลือกสาขาปลายทาง</h2>
         <form action="/withdraw/select-product" method="GET">
             <select name="branch_id" class="branch-select" onchange="this.form.submit()">
-                <option value="">เลือกสาขา...</option>
-                <option value="1">สาขาที่ 1</option>
-                <option value="2">สาขาที่ 2</option>
+                <option value="" disabled selected>เลือกสาขา</option>
+                <% branches.forEach(branch => {%>
+                    <option value="<%=branch.branch_id%>"><%=branch.branch_name%></option>
+                <%})%>
             </select>
         </form>
     </div>
-    <script src="/script/nav.js"></script>
 </div>
 </body>
 </html>

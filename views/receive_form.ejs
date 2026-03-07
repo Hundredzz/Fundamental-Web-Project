@@ -1,23 +1,35 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <%- include('head') %>
     <title>กรอกข้อมูลสินค้า</title>
-    <link rel="stylesheet" href="/css/layout.css">
     <link rel="stylesheet" href="/css/receive_form.css">
-    <link rel="stylesheet" href="/css/nav.css">
+    <link rel="stylesheet" href="/css/search.css">
+    <link rel="stylesheet" href="/css/button.css">
+    <style>
+        input{
+            padding: 10px;
+            width: 100%;
+        }
+        .style-button{
+            width: 100%;
+            padding: 15px;
+            margin: 0;
+        }
+    </style>
 </head>
 <body>
     <%- include('nav') %>
-        <div class="main-content">
+        <div class="main-content" id="main-content">
             <h1 class="header-title">กรอกข้อมูลสินค้า</h1>
             
             <div class="form-card">
-                <h2 class="product-display"><%= brand_name %> (ID: <%= brand_id %>)</h2>
+                <div class="product-display">
+                <h2 style="font-size: 1.2rem;"><%= product.product_id %></h2>
+                <h2 style="font-size: 1.2rem;"><%= product.product_name %></h2>
+                </div>
                 
-                <form action="/save-stock" method="POST">
-                    <input type="hidden" name="brand_id" value="<%= brand_id %>">
+                <form action="/save-stock/<%= product.product_id %>" method="POST">
 
                     <div class="form-group">
                         <label>จำนวนชิ้น :</label>
@@ -29,26 +41,25 @@
                     </div>
                     <div class="form-group">
                         <label>วันผลิต :</label>
-                        <input type="date" name="mfd_date">
+                        <input type="date" name="mfd_date" required>
                     </div>
                     <div class="form-group">
                         <label>วันหมดอายุ :</label>
-                        <input type="date" name="exp_date">
+                        <input type="date" name="exp_date" required>
                     </div>
                     <div class="form-group">
                         <label>ซัพพลายเออร์ :</label>
-                        <input type="text" name="supplier">
+                        <p style="width: 100%;"><%= product.supplier_name %></p>
                     </div>
                     <div class="form-group">
                         <label>หมายเหตุ :</label>
                         <input type="text" name="remark">
                     </div>
                     
-                    <button type="submit" class="btn-submit">ยืนยันการรับเข้า</button>
+                    <button type="submit" class="style-button">ยืนยันการรับเข้า</button>
                 </form>
             </div>
         </div>
     </div>
-    <script src="/script/nav.js"></script>
 </body>
 </html>
