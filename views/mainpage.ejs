@@ -2,51 +2,13 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <%- include('head') %>
     <title>mainpage</title>
     <style>
         body {
             margin: 0;
             background: url(/img/bg.png) repeat, #3B010B;
             overflow-x: hidden;
-        }
-        input {
-            width: 50%;
-            padding: 1%;
-            margin: 2%;
-            background-color: #ffffff;
-            border: 1px solid #ffffff;
-            color: #3B010B;
-            border-radius: 10px;
-            font-size: 16px;
-            outline: none;
-        }
-        input::placeholder {
-            color: #3B010B;
-            opacity: 0.7;
-        }
-        input::-webkit-input-placeholder {
-            color: #3B010B;
-        }
-        input:-webkit-autofill,
-        input:-webkit-autofill:hover,
-        input:-webkit-autofill:focus {
-            -webkit-text-fill-color: #3B010B !important;
-            box-shadow: 0 0 0px 1000px #3B010B inset;
-            transition: all 0.3s ease-in-out;
-        }
-
-        input:hover {
-            border-color: #ffffff;
-            background-color: #ffffff;
-            cursor: pointer;
-        }
-        input:focus {
-            border-color: #ffffff;
-            background-color: #ffffff;
-            box-shadow: 0 0 8px #3B010B;
-            transform: scale(1.02);
         }
         h5 {
             font-size: 18px;
@@ -61,13 +23,13 @@
             margin: 5%;
         }
         .big {
-            width: 100vw;
+            width: 100%;
             display: flex;
             align-items: center;
             justify-content: center;
         }
         .small {
-            width: 30vw;
+            width: 30%;
             padding: 1%;
             padding-left: 3%;
             margin: 1%;
@@ -78,12 +40,11 @@
             text-align: left;
             box-shadow: 0 0 8px #3B010B;
         }
-        .search {
-            width: 100vw;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: relative;
+        .notification-bell {
+            position: absolute;
+            top: 25px; /* ปรับระยะห่างจากขอบด้านบน */
+            right: 3vw; /* ปรับระยะห่างจากขอบด้านขวา */
+            z-index: 10; /* ให้อยู่ด้านบนสุด */
         }
         .search-icon {
             position: absolute;
@@ -118,6 +79,7 @@
             height: 100%;
             background: rgba(0, 0, 0, 0.4);
             z-index: 1;
+            transition: 0.3s;
         }
         .fab-menu {
             display: none;
@@ -150,6 +112,7 @@
         .menu-open #fab-menu,
         .menu-open #overlay {
             display: flex;
+            transition: 0.3s;
         }
         @media screen and (max-width: 600px) {
             .big {
@@ -167,40 +130,52 @@
 </head>
 
 <body>
-
-    <div class="search">
-        <input type="text" placeholder="ค้นหาสินค้า">
-        <img src="/img/search.svg" class="search-icon" alt="search">
+    <%- include('nav') %>
+    <div class="notification-bell">
         <a href="..."><img src="/img/bell.svg" class="bell-icon"></a>
     </div>
-    <div class="big">
-        <div class="small">
-            <h5>สินค้าทั้งหมด</h5>
-            <h1>รายการ</h1>
-            <p>อัปเดตล่าสุด :</p>
+    <div class="main-content" id="main-content">
+        <div class="big">
+            <div class="small">
+                <h5>สินค้าทั้งหมด</h5>
+                <h1><%= dashData ? Number(dashData.totalProducts).toLocaleString('en-US') : 0 %> รายการ</h1>
+                <p>อัปเดตล่าสุด : <%= dashData ? dashData.lastUpdate : '-' %></p>
+            </div>
+
+            <div class="small">
+                <h5>สต๊อกคงเหลือ</h5>
+                <h1><%= dashData ? Number(dashData.totalStock).toLocaleString('en-US') : 0 %> ชิ้น</h1>
+                <p>
+                    <% if (dashData && dashData.dailyChange > 0) { %>
+                        <span class="text-green">+<%= Number(dashData.dailyChange).toLocaleString('en-US') %> ชิ้น</span> จากเมื่อวาน
+                    <% } else if (dashData && dashData.dailyChange < 0) { %>
+                        <span class="text-red"><%= Number(dashData.dailyChange).toLocaleString('en-US') %> ชิ้น</span> จากเมื่อวาน
+                    <% } else { %>
+                        ไม่มีการเปลี่ยนแปลงจากเมื่อวาน
+                    <% } %>
+                </p>
+            </div>
         </div>
 
-        <div class="small">
-            <h5>สต๊อกคงเหลือ</h5>
-            <h1>ชิ้น</h1>
-            <p>... ชิ้น จากเมื่อวาน</p>
+        <div class="big">
+            <div class="small">
+                <h5>ใกล้หมดอายุ (30 วัน)</h5>
+                <h1 class="<%= (dashData && dashData.expiringSoon > 0) ? 'text-orange' : '' %>">
+                    <%= dashData ? Number(dashData.expiringSoon).toLocaleString('en-US') : 0 %> รายการ
+                </h1>
+                <p>ต้องดำเนินการเร่งด่วน</p>
+            </div>
+
+            <div class="small">
+                <h5>หมดอายุแล้ว</h5>
+                <h1 class="<%= (dashData && dashData.expired > 0) ? 'text-red' : '' %>">
+                    <%= dashData ? Number(dashData.expired).toLocaleString('en-US') : 0 %> รายการ
+                </h1>
+                <p>ต้องตรวจสอบและแยกออกจากคลัง</p>
+            </div>
         </div>
     </div>
-    <div class="big">
-        <div class="small">
-            <h5>ใกล้หมดอายุ (30) </h5>
-            <h1>รายการ</h1>
-            <p>ต้องดำเนินการเร่งด่วน</p>
-        </div>
-
-        <div class="small">
-            <h5>หมดอายุแล้ว</h5>
-            <h1>รายการ</h1>
-            <p>ต้องตรวจสอบและแบกออกจากคลัง</p>
-        </div>
-    </div>
-
-    <div id="overlay" class="overlay" onclick="toggleMenu()"></div>
+    <div id="overlay" class="overlay" onclick="togglePlusMenu()"></div>
 
     <div id="fab-menu" class="fab-menu">
         <div class="menu-item">
@@ -217,12 +192,12 @@
         </div>
     </div>
 
-    <div class="add-icon-container" onclick="toggleMenu()">
+    <div class="add-icon-container" onclick="togglePlusMenu()">
         <img src="/img/add.svg" id="main-icon" class="add-icon">
     </div>
 
     <script>
-        function toggleMenu() {
+        function togglePlusMenu() {
             const body = document.body;
             const mainIcon = document.getElementById('main-icon');
             body.classList.toggle('menu-open');

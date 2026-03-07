@@ -182,8 +182,65 @@ app.get("/logout", (req, res) => {
 // ==========================================
 
 app.get("/dashboard", isAuthenticated, (req, res) => {
-    // You don't need to pass { username: ... } manually anymore because res.locals.user is set
-    res.render("home");
+    const sql = `
+        SELECT
+            -- 1. จำนวนสินค้าทั้งหมด
+            (SELECT COUNT(*) FROM Products) AS total_products,
+            
+            -- ดึงเวลาที่มีการทำรายการล่าสุด
+            (SELECT transaction_date FROM Transactions ORDER BY transaction_date DESC LIMIT 1) AS last_update,
+            
+            -- 2. สต็อกคงเหลือ (รวมจำนวนสินค้าในทุกล็อต)
+            (SELECT COALESCE(SUM(quantity), 0) FROM Lots) AS total_stock,
+            
+            -- สต็อกที่เพิ่ม/ลด ในวันนี้ (เทียบจากเมื่อวาน)
+            (SELECT COALESCE(SUM(
+                CASE 
+                    WHEN transaction_type = 'รับสินค้า' THEN change_amount 
+                    WHEN transaction_type = 'จ่ายสินค้า' THEN -change_amount
+                    ELSE 0 
+                END
+            ), 0) FROM Transactions WHERE date(transaction_date) = date('now', 'localtime')) AS daily_change,
+            
+            -- 3. สินค้าใกล้หมดอายุ (ภายใน 30 วัน)
+            (SELECT COUNT(*) FROM Lots 
+             WHERE quantity > 0 AND exp_date IS NOT NULL 
+             AND CAST(julianday(exp_date) - julianday(date('now', 'localtime')) AS INTEGER) BETWEEN 0 AND 30
+            ) AS expiring_soon,
+            
+            -- 4. สินค้าหมดอายุแล้ว (วันหมดอายุน้อยกว่าวันนี้)
+            (SELECT COUNT(*) FROM Lots 
+             WHERE quantity > 0 AND exp_date IS NOT NULL 
+             AND CAST(julianday(exp_date) - julianday(date('now', 'localtime')) AS INTEGER) < 0
+            ) AS expired
+    `;
+
+    db.get(sql, [], (err, row) => {
+        if (err) {
+            console.error("Dashboard Error:", err.message);
+            return res.status(500).send("เกิดข้อผิดพลาดในการโหลดข้อมูล Dashboard");
+        }
+
+        // จัดฟอร์แมตวันที่อัปเดตล่าสุดให้สวยงาม (เช่น 07/03/2026, 15:30)
+        let formattedLastUpdate = "ยังไม่มีข้อมูล";
+        if (row.last_update) {
+            const d = new Date(row.last_update);
+            formattedLastUpdate = d.toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' });
+        }
+
+        // เตรียมข้อมูลส่งไปที่ EJS
+        const dashData = {
+            totalProducts: row.total_products || 0,
+            lastUpdate: formattedLastUpdate,
+            totalStock: row.total_stock || 0,
+            dailyChange: row.daily_change || 0,
+            expiringSoon: row.expiring_soon || 0,
+            expired: row.expired || 0
+        };
+
+        // ส่งข้อมูล dashData ไปที่ไฟล์ mainpage.ejs
+        res.render("mainpage", { dashData: dashData });
+    });
 });
 
 app.get("/mainpage", isAuthenticated, (req, res) => res.render("mainpage"));

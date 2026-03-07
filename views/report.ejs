@@ -2,8 +2,7 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <%- include('head') %>
     <title>Report</title>
     <style>
         body {
@@ -56,7 +55,7 @@
 </head>
 
 <body>
-
+<%- include('nav') %>
     <div class="container">
         <h1>สร้างรายงาน</h1>
         <button onclick="window.location.href = '/createReport/stock'">รายงานสต๊อก</button>
