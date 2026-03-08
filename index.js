@@ -1426,6 +1426,14 @@ app.get("/api/product/:id", isAuthenticated, authorizeRoles(["Manager", "Staff"]
 });
 
 
+app.get('/expiry', (req, res) => {
+    res.render('expiry_monitor');
+});
+
+app.get('/expiry-table', (req, res) => {
+    res.render('expiry_table');
+});
+
 app.listen(port, () => {
     console.log(`Server is running on http://localhost:${port}`);
 });
