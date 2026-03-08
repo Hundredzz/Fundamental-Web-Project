@@ -43,6 +43,7 @@ const storageConfig = multer.diskStorage({
 });
 
 // Connect to SQLite database
+const dbPath = path.join(__dirname, 'Warehouse.db');
 let db = new sqlite3.Database('Warehouse.db', (err) => {
     if (err) {
         return console.error(err.message);
@@ -1179,18 +1180,35 @@ app.get('/receive/add/:id', (req, res) => {
     });
 });
 
+// app.post('/save-stock', (req, res) => {
+//     console.log("ข้อมูลที่รับมา:", req.body);
+
+//     const { brand_id, quantity, lot_number, mfd_date, exp_date, supplier, remark } = req.body;
+//     const sql = `INSERT INTO stock (brand_id, quantity, lot_number, mfd_date, exp_date, supplier, remark) VALUES (?, ?, ?, ?, ?, ?, ?)`;
+
+//     db.run(sql, [brand_id, quantity, lot_number, mfd_date, exp_date, supplier, remark], function(err) {
+//         if (err) {
+//             console.error("SQL Error:", err.message);
+//             return res.status(500).send("เกิดข้อผิดพลาด: " + err.message);
+//         }
+//         res.render('receive_success');
+//     });
+// });
 app.post('/save-stock', (req, res) => {
     console.log("ข้อมูลที่รับมา:", req.body);
 
-    const { brand_id, quantity, lot_number, mfd_date, exp_date, supplier, remark } = req.body;
-    const sql = `INSERT INTO stock (brand_id, quantity, lot_number, mfd_date, exp_date, supplier, remark) VALUES (?, ?, ?, ?, ?, ?, ?)`;
+    const { product_id, quantity, lot_batch_code, exp_date } = req.body; 
 
-    db.run(sql, [brand_id, quantity, lot_number, mfd_date, exp_date, supplier, remark], function(err) {
+    const sql = `INSERT INTO Lots (product_id, lot_batch_code, exp_date, quantity) VALUES (?, ?, ?, ?)`;
+
+    db.run(sql, [product_id, quantity, lot_batch_code, exp_date], function(err) {
         if (err) {
             console.error("SQL Error:", err.message);
-            return res.status(500).send("เกิดข้อผิดพลาด: " + err.message);
+            return res.status(500).send("เกิดข้อผิดพลาดในการบันทึก Lot: " + err.message);
         }
-        res.render('receive_success');
+        
+        console.log(`เพิ่มข้อมูลลง Lots สำเร็จ ID: ${this.lastID}`);
+        res.render('receive_success'); 
     });
 });
 
@@ -1311,7 +1329,7 @@ app.get("/api/notifications/latest", isAuthenticated, (req, res) => {
         });
     });
 });
-// ในไฟล์ index.js
+
 app.get("/expiry", isAuthenticated, (req, res) => {
     const query = `
         SELECT p.product_id as sku, p.product_name, l.lot_batch_code, l.quantity, l.exp_date
