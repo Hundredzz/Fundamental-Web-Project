@@ -1,16 +1,69 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Scan</title>
+    <%- include('head') %> <title>สแกนบาร์โค้ด</title>
     <link rel="stylesheet" href="/css/nav.css">
     <link rel="stylesheet" href="/css/scan.css">
+    <style>
+        /* ปรับแต่งหน้าตาเครื่องสแกนให้ดูดีขึ้น */
+        #reader {
+            border: 2px solid #75162D !important;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        #reader__dashboard_section_csr button {
+            background-color: #75162D !important;
+            color: white !important;
+            border-radius: 5px;
+            padding: 8px 15px;
+            border: none;
+            cursor: pointer;
+        }
+    </style>
 </head>
 <body>
     <%- include('nav') %>
 
+    <div class="main-content">
+        <h1 style="text-align: center; color: #3B010B; margin-top: 20px;">สแกนบาร์โค้ดสินค้า</h1>
+        <p style="text-align: center; color: #666;">วางบาร์โค้ดให้อยู่ในกรอบสี่เหลี่ยมเพื่อสแกน</p>
+        
+        <div id="reader" style="width: 100%; max-width: 500px; margin: 20px auto; border-radius: 10px; overflow: hidden;"></div>
+    </div>
 
-     <script src="/script/nav.js"></script>
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    <script src="/script/nav.js"></script>
+
+    <script>
+        // 1. ฟังก์ชันเมื่อสแกนสำเร็จ
+        // function onScanSuccess(decodedText) {
+        //     // เมื่อสแกนติด ให้หยุดการทำงานของกล้องก่อนเพื่อป้องกันการเด้งซ้ำ
+        //     html5QrcodeScanner.clear().then(() => {
+        //         alert("สแกนสำเร็จ! รหัสสินค้าคือ: " + decodedText);
+        //         // 2. เด้งไปหน้าค้นหาสินค้า (หรือหน้าจัดการสต็อก)
+        //         window.location.href = "/product?search=" + decodedText;
+        //     }).catch(error => {
+        //         console.error("Failed to clear scanner", error);
+        //     });
+        // }
+        
+        function onScanSuccess(decodedText) {
+            html5QrcodeScanner.clear().then(() => {
+                window.location.href = `/product?search=${encodeURIComponent(decodedText)}&openPopup=true`;
+            }).catch(err => {
+                console.error("Scanner clear error:", err);
+            });
+        }
+
+        const config = { 
+            fps: 10, 
+            qrbox: { width: 300, height: 150 }, 
+            aspectRatio: 1.0,
+            formatsToSupport: [ Html5QrcodeSupportedFormats.CODE_128 ] 
+        };
+
+        // 4. เริ่มทำงาน (ห้ามประกาศตัวแปรซ้ำ)
+        let html5QrcodeScanner = new Html5QrcodeScanner("reader", config, /* verbose= */ false);
+        html5QrcodeScanner.render(onScanSuccess);
+    </script>
 </body>
 </html>

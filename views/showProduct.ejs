@@ -12,6 +12,32 @@
         <script src="/script/productPopUp.js" defer></script>
         <script src="/script/productHandling.js" defer></script>
         <script src="/script/deleteProduct.js" defer></script>
+        <style>
+            .back-link {
+                background: none;
+                border: 1px solid #75162D;
+                color: #75162D;
+                padding: 8px 15px;
+                border-radius: 5px;
+                cursor: pointer;
+                font-size: 14px;
+                transition: 0.3s;
+            }
+
+            .back-link:hover {
+                background-color: #75162D;
+                color: white;
+            }
+
+            .reset-btn {
+                background-color: #f0f0f0;
+                border: 1px solid #ccc;
+                padding: 8px 15px;
+                border-radius: 5px;
+                margin-left: 5px;
+                cursor: pointer;
+            }
+        </style>
 </head>
 
 <body>
@@ -54,5 +80,17 @@
         <%- include('productPopup') %>
 
 </body>
-
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const params = new URLSearchParams(window.location.search);
+        const scanId = params.get('search'); 
+        
+        if (params.get('openPopup') === 'true' && scanId) {
+            const targetBtn = document.querySelector(`.detail-btn[data="${scanId}"]`);
+            if (targetBtn) {
+                showDetail(targetBtn);
+            }
+        }
+    });
+</script>
 </html>

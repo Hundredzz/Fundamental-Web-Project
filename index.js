@@ -43,6 +43,7 @@ const storageConfig = multer.diskStorage({
 });
 
 // Connect to SQLite database
+const dbPath = path.join(__dirname, 'Warehouse.db');
 let db = new sqlite3.Database('Warehouse.db', (err) => {
     if (err) {
         return console.error(err.message);
@@ -942,6 +943,7 @@ app.get('/toggle-ban/:userid/:status', isAuthenticated, authorizeRoles(["Manager
 
 // --- Product Routes ---
 app.get("/product", isAuthenticated, authorizeRoles(["Manager", "Staff"]), (req, res) => {
+    const searchTerm = req.query.search || "";
     const limit = 18; const page = 1; const offset = 0;
     const query = `
         SELECT p.product_name AS product_name, p.img_path AS img_path, p.product_id AS product_id, 
@@ -962,7 +964,9 @@ app.get("/product", isAuthenticated, authorizeRoles(["Manager", "Staff"]), (req,
             if (err) return res.status(500).send("Database error");
             res.render('showProduct', {
                 data: rows, 
-                currentPage: page, totalPages: totalPages
+                currentPage: page, totalPages: totalPages,
+                totalPages: Math.ceil(row.count / limit),
+                searchTerm: searchTerm
             });
         });
     });
@@ -1371,9 +1375,11 @@ app.post('/withdraw/confirm/:id/:branch', isAuthenticated, (req, res) => {
         });
     });
 });
-
-app.get('/scan', (req, res) => {
-    res.render('scan');
+// scan
+app.get("/scan", isAuthenticated, (req, res) => {
+    res.render("scan", { 
+        user: req.session.user 
+    });
 });
 app.get('/fetch-product/:page/:ejsName', isAuthenticated, authorizeRoles(["Manager", "Staff"]), (req, res) => {
     const limit = 18; const page = parseInt(req.params.page) || 1; const offset = (page - 1) * limit;
@@ -1424,6 +1430,58 @@ app.get("/api/product/:id", isAuthenticated, authorizeRoles(["Manager", "Staff"]
         res.json(row);
     });
 });
+// ==========================================
+// แจ้งเตือน (Notifications)" ตรงกระดิ่งในหน้า mainpage.ejs
+app.get("/api/notifications/count", isAuthenticated, (req, res) => {
+    const sql = `
+        SELECT COUNT(*) as count 
+        FROM Lots 
+        WHERE exp_date <= date('now', '+30 days') AND quantity > 0
+    `;
+    
+    db.get(sql, [], (err, row) => {
+        if (err) return res.status(500).json({ count: 0 });
+        res.json({ count: row.count });
+    });
+});
+app.get("/api/notifications/latest", isAuthenticated, (req, res) => {
+    const sql = `
+        SELECT p.product_name, l.exp_date, l.quantity
+        FROM Lots l
+        JOIN Products p ON l.product_id = p.product_id
+        WHERE l.exp_date <= date('now', '+30 days') AND l.quantity > 0
+        ORDER BY l.exp_date ASC
+        LIMIT 5
+    `;
+    
+    db.all(sql, [], (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({
+            count: rows.length,
+            items: rows
+        });
+    });
+});
+
+app.get("/expiry", isAuthenticated, (req, res) => {
+    const query = `
+        SELECT p.product_id as sku, p.product_name, l.lot_batch_code, l.quantity, l.exp_date
+        FROM Lots l
+        JOIN Products p ON l.product_id = p.product_id
+        WHERE l.exp_date <= date('now', '+30 days') AND l.exp_date >= date('now')
+        ORDER BY l.exp_date ASC
+    `;
+
+    db.all(query, [], (err, rows) => {
+        if (err) {
+            console.error(err);
+            return res.status(500).send("Database Error");
+        }
+        // ส่งข้อมูลไปยังไฟล์ expiry.ejs
+        res.render("expiry", { expiringProducts: rows, user: req.session.user });
+    });
+});
+// ==========================================
 
 
 app.get('/expiry', (req, res) => {
