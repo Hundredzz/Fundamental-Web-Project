@@ -64,6 +64,9 @@ function loadData() {
     db.all(`SELECT * FROM Suppliers ORDER BY supplier_name`, [], (err, suppliers) => {
         if (!err) app.locals.suppliers  = suppliers;
     });
+    db.all(`SELECT * FROM Branches ORDER BY branch_name`, [], (err, branches) => {
+        if (!err) app.locals.branches  = branches;
+    });
 }
 
 // ==========================================
@@ -131,12 +134,12 @@ app.get("/", (req, res) => {
 app.post("/login", (req, res) => {
     const { username, password } = req.body;
 
-    const sql = `SELECT Users.username, Users.password, Users.status, Users.role, Employees.first_name, Employees.last_name
+    const sql = `SELECT Users.username, Users.password, Users.employee_id, Users.status, Users.role, Employees.first_name, Employees.last_name
         FROM Users 
         INNER JOIN Employees ON Users.employee_id = Employees.employee_id 
-        WHERE Users.username = ? OR Employees.email = ?`;
+        WHERE Users.username = ?`;
 
-    db.get(sql, [username, username], (err, row) => {
+    db.get(sql, [username], (err, row) => {
         if (err) return res.status(500).send(err.message);
         if (!row) return res.redirect("/?error=notfound");
         if (row.status === "Inactive") return res.redirect("/?error=inactive");
@@ -154,6 +157,7 @@ app.post("/login", (req, res) => {
                 req.session.user = {
                     username: row.username,
                     role: row.role,
+                    emp_id: row.employee_id,
                     firstName: row.first_name,
                     lastName: row.last_name
                 };
@@ -166,7 +170,30 @@ app.post("/login", (req, res) => {
 });
 
 app.get("/receive", isAuthenticated, (req, res) => { 
-    res.render("receive_stock");
+    const limit = 18; const page = 1; const offset = 0;
+    const query = `
+        SELECT p.product_name AS product_name, p.img_path AS img_path, p.product_id AS product_id, 
+               c.category_name AS category_name, b.brand_name AS brand_name, COALESCE(SUM(l.quantity), 0) AS total_quantity
+        FROM Products p 
+        LEFT JOIN Categories c ON p.category_id = c.category_id 
+        LEFT JOIN Brands b ON p.brand_id = b.brand_id 
+        LEFT JOIN Lots l ON p.product_id = l.product_id
+        GROUP BY p.product_id ORDER BY p.product_name ASC
+        LIMIT ? OFFSET ?`;
+
+    const countQuery = `SELECT COUNT(*) AS count FROM products`
+
+    db.all(countQuery, (err, row) => {
+        if (err) return res.status(500).send("Database error");
+        const totalPages = Math.ceil(row[0].count / limit);
+        db.all(query, [limit, offset], (err, rows) => {
+            if (err) return res.status(500).send("Database error");
+            res.render('receive_stock', {
+                data: rows, 
+                currentPage: page, totalPages: totalPages
+            });
+        });
+    });
 });
 
 app.get("/logout", (req, res) => {
@@ -945,9 +972,7 @@ app.get("/product", isAuthenticated, authorizeRoles(["Manager", "Staff"]), (req,
     });
 });
 
-//--------------------
-
-app.get('/search', isAuthenticated, authorizeRoles(["Manager", "Staff"]), (req, res) => {
+app.get('/search/:ejsName', isAuthenticated, authorizeRoles(["Manager", "Staff"]), (req, res) => {
     const q = req.query.q || ''; const category = req.query.category || ''; const brand = req.query.brand || '';
     const limit = 18; const page = 1; const offset = 0;
 
@@ -991,7 +1016,7 @@ app.get('/search', isAuthenticated, authorizeRoles(["Manager", "Staff"]), (req, 
 
         db.all(finalSql, finalParams, (err, rows) => {
             if (err) return res.status(500).json({ error: "Database error" });
-            res.render('productSection', { data: rows, currentPage: page, totalPages: totalPages }, (err, html) => {
+            res.render(req.params.ejsName, {ejsName:req.params.ejsName, data: rows, currentPage: page, totalPages: totalPages }, (err, html) => {
                 if (err) return res.status(500).json({ error: "Render error" });
                 res.json({ html: html });
             });
@@ -1154,92 +1179,201 @@ app.delete("/delete-product/:id", isAuthenticated, authorizeRoles(["Manager", "S
     });
 });
 
-app.get('/receive-stock', (req, res) => {
-    const products = [
-        { id: 1, name: 'Foundation' },
-        { id: 2, name: 'Concealer' }
-    ];
-
-    res.render('receive_stock', { 
-        products: products 
-    });
+app.get('/receiveForm/:id', isAuthenticated, (req, res) => {
+    fetch(`http://localhost:${port}/api/product/${req.params.id}`, { headers: { cookie: req.headers.cookie }})
+        .then(response => response.json())
+        .then(data => {
+            res.render('receive_form', {product: data});
+        })
+        .catch(error => console.error('Error loading page:', error))
 });
 
-app.get('/receive/add/:id', (req, res) => {
-    const brandId = req.params.id;
+app.post('/save-stock/:id', isAuthenticated, (req, res) => {
 
-    db.get("SELECT * FROM brands WHERE brand_id = ?", [brandId], (err, row) => {
-        if (err || !row) {
-            return res.redirect('/receive');
+    const {quantity, lot_number, mfd_date, exp_date, remark } = req.body;
+
+    const now = new Date();
+    const tzOffset = now.getTimezoneOffset() * 60000;
+    const transaction_date = (new Date(now - tzOffset)).toISOString().slice(0, 19).replace('T', ' ');
+
+    let note = remark || ''; // ถ้าไม่มี mfd_date ให้ใช้ remark แทน
+    if (mfd_date) {
+        const mfd = new Date(mfd_date);
+        const diffTime = Math.abs(now - mfd);
+        const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+        note = `ได้รับสินค้า ${diffDays} วัน หลังจากวันผลิต`;
+    }
+
+    const transaction_type = 'รับสินค้า';
+
+    // SQL สำหรับเพิ่ม Lot
+    const sqlInsertLot = `INSERT INTO lots (product_id, quantity, lot_batch_code, mfg_date, exp_date) VALUES (?, ?, ?, ?, ?)`;
+    
+    // SQL สำหรับเพิ่ม Transaction
+    const sqlInsertTransaction = `INSERT INTO Transactions (product_id, employee_id, change_amount, transaction_type, transaction_date, note) VALUES (?, ?, ?, ?, ?, ?)`;
+
+    // --- เริ่มกระบวนการบันทึกลง Database ---
+    
+    // รันคำสั่งที่ 1: บันทึกลงตาราง lots
+    db.run(sqlInsertLot, [req.params.id, quantity, lot_number, mfd_date, exp_date], function(err) {
+        if (err) {
+            console.error("Error inserting lot:", err.message);
+            return res.status(500).send("เกิดข้อผิดพลาดในการบันทึก Lot: " + err.message);
         }
 
-        res.render('receive_form', { 
-            brand_id: row.brand_id, 
-            brand_name: row.brand_name 
+        // ถ้ารันคำสั่งแรกสำเร็จ ให้รันคำสั่งที่ 2: บันทึกลงตาราง Transactions ต่อ
+        db.run(sqlInsertTransaction, [req.params.id, req.session.user.emp_id, quantity, transaction_type, transaction_date, note], function(err2) {
+            if (err2) {
+                console.error("Error inserting transaction:", err2.message);
+                // หมายเหตุ: ในระบบใหญ่ๆ ถ้า error ตรงนี้อาจจะต้องทำ Rollback ข้อมูล Lot แต่เบื้องต้นใช้แบบนี้ไปก่อนได้ครับ
+                return res.status(500).send("เกิดข้อผิดพลาดในการบันทึก Transaction: " + err2.message);
+            }
+
+            // บันทึกสำเร็จทั้ง 2 ตาราง
+            res.render('receive_success');
         });
     });
 });
 
-// app.post('/save-stock', (req, res) => {
-//     console.log("ข้อมูลที่รับมา:", req.body);
-
-//     const { brand_id, quantity, lot_number, mfd_date, exp_date, supplier, remark } = req.body;
-//     const sql = `INSERT INTO stock (brand_id, quantity, lot_number, mfd_date, exp_date, supplier, remark) VALUES (?, ?, ?, ?, ?, ?, ?)`;
-
-//     db.run(sql, [brand_id, quantity, lot_number, mfd_date, exp_date, supplier, remark], function(err) {
-//         if (err) {
-//             console.error("SQL Error:", err.message);
-//             return res.status(500).send("เกิดข้อผิดพลาด: " + err.message);
-//         }
-//         res.render('receive_success');
-//     });
-// });
-app.post('/save-stock', (req, res) => {
-    console.log("ข้อมูลที่รับมา:", req.body);
-
-    const { product_id, quantity, lot_batch_code, exp_date } = req.body; 
-
-    const sql = `INSERT INTO Lots (product_id, lot_batch_code, exp_date, quantity) VALUES (?, ?, ?, ?)`;
-
-    db.run(sql, [product_id, quantity, lot_batch_code, exp_date], function(err) {
-        if (err) {
-            console.error("SQL Error:", err.message);
-            return res.status(500).send("เกิดข้อผิดพลาดในการบันทึก Lot: " + err.message);
-        }
-        
-        console.log(`เพิ่มข้อมูลลง Lots สำเร็จ ID: ${this.lastID}`);
-        res.render('receive_success'); 
-    });
-});
-
-app.get('/withdraw', (req, res) => {
+app.get('/withdraw',isAuthenticated, (req, res) => {
     res.render('withdraw_branch');
 });
 
-app.get('/withdraw/select-product', (req, res) => {
+app.get('/withdraw/select-product', isAuthenticated, (req, res) => {
     const branchId = req.query.branch_id;
-    const products = [{id: 1, name: 'Foundation'}, {id: 2, name: 'Concealer'}];
-    res.render('withdraw_list', { branchId, branchName: 'สาขา ' + branchId, products });
-});
+    const limit = 18; const page = 1; const offset = 0;
+    const query = `
+        SELECT p.product_name AS product_name, p.img_path AS img_path, p.product_id AS product_id, 
+               c.category_name AS category_name, b.brand_name AS brand_name, COALESCE(SUM(l.quantity), 0) AS total_quantity
+        FROM Products p 
+        LEFT JOIN Categories c ON p.category_id = c.category_id 
+        LEFT JOIN Brands b ON p.brand_id = b.brand_id 
+        LEFT JOIN Lots l ON p.product_id = l.product_id
+        GROUP BY p.product_id ORDER BY p.product_name ASC
+        LIMIT ? OFFSET ?`;
 
-app.get('/withdraw/item/:id', (req, res) => {
-    const productId = req.params.id;
-    const branchId = req.query.branch;
-    
-    let productName = "";
-    if (productId == "1") productName = "Foundation";
-    else if (productId == "2") productName = "Concealer";
-    else productName = "สินค้าทั่วไป";
+    const countQuery = `SELECT COUNT(*) AS count FROM products`
 
-    res.render('withdraw_form', { 
-        productId: productId,
-        productName: productName,
-        branchId: branchId
+    db.all(countQuery, (err, row) => {
+        if (err) return res.status(500).send("Database error");
+        const totalPages = Math.ceil(row[0].count / limit);
+        db.all(query, [limit, offset], (err, rows) => {
+            if (err) return res.status(500).send("Database error");
+            res.render('withdraw_list', { branchId : branchId,
+                data: rows, 
+                currentPage: page, totalPages: totalPages
+            });
+        });
     });
+    
 });
 
-app.post('/withdraw/confirm', (req, res) => {
-    res.render('withdraw_success');
+app.get('/withdraw/item/:id/:branch', isAuthenticated, (req, res) => {
+    const branchId = req.params.branch;
+fetch(`http://localhost:${port}/api/product/${req.params.id}`, { headers: { cookie: req.headers.cookie }})
+        .then(response => response.json())
+        .then(data => {
+            res.render('withdraw_form', {product: data, branchId: branchId});
+        })
+        .catch(error => console.error('Error loading page:', error))
+});
+
+app.post('/withdraw/confirm/:id/:branch', isAuthenticated, (req, res) => {
+    const {  quantity,  note } = req.body;
+    const branch_id = req.params.branch;
+    const product_id = req.params.id;
+    const withdrawQty = parseInt(quantity, 10);
+    const employee_id = req.session.user.emp_id;
+
+    if (!product_id || isNaN(withdrawQty) || withdrawQty <= 0) {
+        return res.status(400).send("ข้อมูลไม่ถูกต้อง หรือระบุจำนวนไม่ถูกต้อง");
+    }
+
+    const now = new Date();
+    const tzOffset = now.getTimezoneOffset() * 60000;
+    const transaction_date = (new Date(now - tzOffset)).toISOString().slice(0, 19).replace('T', ' ');
+    const transaction_type = 'จ่ายสินค้า';
+
+    // 2. ดึงข้อมูล Lot ของสินค้านี้ ที่มีของเหลืออยู่ โดยเรียงจากเก่าสุด (FIFO)
+    // ใช้ mfg_date (วันที่ผลิต) หรือ exp_date (วันหมดอายุ) ในการเรียง
+    const selectLotsSql = `
+        SELECT lot_id, quantity, lot_batch_code 
+        FROM Lots 
+        WHERE product_id = ? AND quantity > 0 
+        ORDER BY mfg_date ASC, exp_date ASC, lot_id ASC
+    `;
+
+    db.all(selectLotsSql, [product_id], (err, lots) => {
+        if (err) {
+            console.error("Error fetching lots:", err.message);
+            return res.status(500).send("เกิดข้อผิดพลาดในการดึงข้อมูลสต็อก: " + err.message);
+        }
+
+        // 3. ตรวจสอบว่าสินค้ามีพอให้เบิกหรือไม่
+        const totalAvailable = lots.reduce((sum, lot) => sum + lot.quantity, 0);
+        if (totalAvailable < withdrawQty) {
+            return res.status(400).send(`ยอดสต็อกไม่เพียงพอ (ต้องการเบิก ${withdrawQty} ชิ้น, แต่มีของในระบบเพียง ${totalAvailable} ชิ้น)`);
+        }
+
+        // 4. คำนวณการหักยอดในแต่ละ Lot (ทำใน Memory ก่อนเขียนลง DB)
+        let remainingToWithdraw = withdrawQty;
+        const updates = []; // เก็บข้อมูลเพื่อรอไป UPDATE
+
+        for (let lot of lots) {
+            if (remainingToWithdraw <= 0) break; // หักยอดครบแล้วให้หยุดลูป
+
+            if (lot.quantity >= remainingToWithdraw) {
+                // ถ้าล็อตนี้มีของ "พอ" หักยอดที่เหลือทั้งหมด
+                const newQty = lot.quantity - remainingToWithdraw;
+                updates.push({ lot_id: lot.lot_id, newQty: newQty });
+                remainingToWithdraw = 0; 
+            } else {
+                // ถ้าล็อตนี้มีของ "ไม่พอ" หักยอด ให้ปรับล็อตนี้เป็น 0 และนำยอดที่ขาดไปหักจากล็อตถัดไป
+                updates.push({ lot_id: lot.lot_id, newQty: 0 });
+                remainingToWithdraw -= lot.quantity;
+            }
+        }
+
+        // 5. บันทึกลงฐานข้อมูล (ใช้ TRANSACTION ป้องกันข้อมูลพังหากเกิด Error กลางคัน)
+        db.serialize(() => {
+            db.run("BEGIN TRANSACTION");
+
+            // 5.1 อัปเดตตาราง Lots (เปลี่ยนมาใช้ db.run แทน db.prepare)
+            updates.forEach(update => {
+                db.run(`UPDATE Lots SET quantity = ? WHERE lot_id = ?`, [update.newQty, update.lot_id], function(updateErr) {
+                    if (updateErr) {
+                        console.error(`🚨 Error updating Lot (lot_id: ${update.lot_id}):`, updateErr.message);
+                    } else {
+                        console.log(`✅ อัปเดตสต็อก Lot lot_id ${update.lot_id} สำเร็จ: เหลือยอด ${update.newQty}`);
+                    }
+                });
+            });
+
+            // 5.2 บันทึกประวัติลงตาราง Transactions
+            const finalNote = branch_id ? `เบิกไปสาขา ${branch_id} | ${note || ''}` : (note || '');
+            const sqlInsertTx = `INSERT INTO Transactions (product_id, employee_id, change_amount, transaction_type, transaction_date,destination_branch, note) VALUES (?, ?, ?, ?, ?, ?, ?)`;
+            
+            db.run(sqlInsertTx, [product_id, employee_id, withdrawQty, transaction_type, transaction_date, branch_id, finalNote], function(txErr) {
+                if (txErr) {
+                    // หากเกิด Error ให้ ยกเลิก (ROLLBACK) ข้อมูล Lot ที่แก้ไขไปเมื่อกี้ทั้งหมด
+                    db.run("ROLLBACK");
+                    console.error("🚨 Error inserting transaction:", txErr.message);
+                    return res.status(500).send("เกิดข้อผิดพลาดในการบันทึก Transaction: " + txErr.message);
+                }
+
+                // หากทุกอย่างราบรื่น ยืนยันการบันทึก (COMMIT)
+                db.run("COMMIT", (commitErr) => {
+                    if (commitErr) {
+                        console.error("🚨 Commit error:", commitErr);
+                        return res.status(500).send("เกิดข้อผิดพลาดระดับฐานข้อมูล");
+                    }
+                    
+                    // เสร็จสมบูรณ์ ส่งไปยังหน้า Success
+                    res.render('withdraw_success');
+                });
+            });
+        });
+    });
 });
 // scan
 app.get("/scan", isAuthenticated, (req, res) => {
@@ -1247,8 +1381,7 @@ app.get("/scan", isAuthenticated, (req, res) => {
         user: req.session.user 
     });
 });
-//
-app.get('/fetch-product/:page', isAuthenticated, authorizeRoles(["Manager", "Staff"]), (req, res) => {
+app.get('/fetch-product/:page/:ejsName', isAuthenticated, authorizeRoles(["Manager", "Staff"]), (req, res) => {
     const limit = 18; const page = parseInt(req.params.page) || 1; const offset = (page - 1) * limit;
     const q = req.query.q || ''; const category = req.query.category || ''; const brand = req.query.brand || '';
 
@@ -1271,7 +1404,7 @@ app.get('/fetch-product/:page', isAuthenticated, authorizeRoles(["Manager", "Sta
 
         db.all(finalSql, finalParams, (err, rows) => {
             if (err) return res.status(500).json({ error: "Database error" });
-            res.render('productSection', { data: rows, currentPage: page, totalPages: totalPages }, (err, html) => {
+            res.render(req.params.ejsName, {ejsName:req.params.ejsName, data: rows, currentPage: page, totalPages: totalPages }, (err, html) => {
                 if (err) return res.status(500).json({ error: "Render error" });
                 res.json({ html: html });
             });
@@ -1350,6 +1483,14 @@ app.get("/expiry", isAuthenticated, (req, res) => {
 });
 // ==========================================
 
+
+app.get('/expiry', (req, res) => {
+    res.render('expiry_monitor');
+});
+
+app.get('/expiry-table', (req, res) => {
+    res.render('expiry_table');
+});
 
 app.listen(port, () => {
     console.log(`Server is running on http://localhost:${port}`);

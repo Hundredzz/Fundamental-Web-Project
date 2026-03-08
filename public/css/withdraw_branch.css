@@ -1,13 +1,14 @@
 body {
     margin: 0;
-    background: url(/img/bg.png) repeat, #3B010B;
+    background: url(/img/big-background.png) repeat, #3B010B;
+    background-size: cover;
     overflow-x: hidden;
 }
 
 .branch-card {
     background-color: #5d0e1a;
     color: white;
-    padding: 40px;
+    padding: 20px;
     border-radius: 15px;
     text-align: center;
     width: 400px;

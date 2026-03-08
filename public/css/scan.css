@@ -1,5 +1,6 @@
 body {
     margin: 0;
-    background: url(/img/bg.png) repeat, #3B010B;
+    background: url(/img/big-background.png) repeat, #3B010B;
+    background-size: cover;
     overflow-x: hidden;
 }

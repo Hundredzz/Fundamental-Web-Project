@@ -47,12 +47,12 @@
                 <div>
                     <div class="search">
                         <input type="text" name="search" placeholder="ค้นหาสินค้า" id="search-text"
-                            onkeydown="if(event.key === 'Enter') changePage(this)">
-                        <button type="submit" onclick="changePage(this)" class="style-button"><span
+                            onkeydown="if(event.key === 'Enter') changePage(this, 'productSection')">
+                        <button type="submit" onclick="changePage(this, 'productSection')" class="style-button"><span
                                 class="material-symbols-outlined search-icon">search</span><span>ค้นหา</span></button>
                     </div>
                     <div class="search">
-                        <select id="category-select" onchange="changePage(this)">
+                        <select id="category-select" onchange="changePage(this, 'productSection')">
                             <option value="">ประเภทสินค้า</option>
                             <% categories.forEach(category=> { %>
                                 <option value="<%= category.category_name %>">
@@ -61,7 +61,7 @@
                                 <% }) %>
                         </select>
 
-                        <select id="brand-select" onchange="changePage(this)">
+                        <select id="brand-select" onchange="changePage(this, 'productSection')">
                             <option value="">แบรนด์สินค้า</option>
                             <% brands.forEach(brand=> { %>
                                 <option value="<%= brand.brand_name %>">
@@ -74,7 +74,7 @@
                 <button onclick="window.location.href='/add-product'" class="style-button">+ เพื่มสินค้า</button>
             </div>
             <div id="product-sect">
-                <%- include('productSection', { data: data, currentPage: currentPage, totalPages: totalPages }) %>
+                <%- include('productSection', {ejsName:'productSection', data: data, currentPage: currentPage, totalPages: totalPages }) %>
             </div>
         </div>
         <%- include('productPopup') %>

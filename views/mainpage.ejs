@@ -12,15 +12,16 @@
         }
         h5 {
             font-size: 18px;
-            color: black;
+            color: #3B010B;
         }
         p {
             font-size: 14px;
-            color: black;
+            color: #3B010B;
         }
         h1 {
             color: black;
             margin: 5%;
+            color: #3B010B;
         }
         .big {
             width: 100%;
@@ -30,15 +31,15 @@
         }
         .small {
             width: 30%;
-            padding: 1%;
+            padding: 2%;
             padding-left: 3%;
             margin: 1%;
             background-color: #ffffff;
             color: #3B010B;
             border: 1px solid #f2e5c6;
-            border-radius: 10px;
+            border-radius: 15px;
             text-align: left;
-            box-shadow: 0 0 8px #3B010B;
+            box-shadow: 0 8px 10px #3B010B;
         }
         .notification-bell {
             position: absolute;
@@ -200,8 +201,8 @@
 
         <div class="big">
             <div class="small">
-                <h5>ใกล้หมดอายุ (30 วัน)</h5>
-                <h1 class="<%= (dashData && dashData.expiringSoon > 0) ? 'text-orange' : '' %>">
+                <h5 style="color: #75162E;">ใกล้หมดอายุ (30 วัน)</h5>
+                <h1 style="color: #75162E;" class="<%= (dashData && dashData.expiringSoon > 0) ? 'text-orange' : '' %>">
                     <%= dashData ? Number(dashData.expiringSoon).toLocaleString('en-US') : 0 %> รายการ
                 </h1>
                 <p>ต้องดำเนินการเร่งด่วน</p>
@@ -209,7 +210,7 @@
 
             <div class="small">
                 <h5>หมดอายุแล้ว</h5>
-                <h1 class="<%= (dashData && dashData.expired > 0) ? 'text-red' : '' %>">
+                <h1 style="color: #75162E;" class="<%= (dashData && dashData.expired > 0) ? 'text-red' : '' %>">
                     <%= dashData ? Number(dashData.expired).toLocaleString('en-US') : 0 %> รายการ
                 </h1>
                 <p>ต้องตรวจสอบและแยกออกจากคลัง</p>
@@ -219,11 +220,11 @@
     <div id="overlay" class="overlay" onclick="togglePlusMenu()"></div>
 
     <div id="fab-menu" class="fab-menu">
-        <div class="menu-item">
-            <img src="/img/plus.svg" style="width: 24px; margin-right: 10%";>
+        <div class="menu-item" onclick="window.location.href='/receive'">
+            <img src="/img/plus.svg" style="width: 24px; margin-right: 10%" >
             <p>รับสินค้าเข้า</p>
         </div>
-        <div class="menu-item">
+        <div class="menu-item" onclick="window.location.href='/withdraw'">
             <img src="/img/minus.svg" style="width: 24px; margin-right: 10%">
             <p>เบิกสินค้าออก</p>
         </div>

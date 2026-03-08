@@ -1,6 +1,7 @@
 body {
     margin: 0;
-    background: url(/img/bg.png) repeat, #3B010B;
+    background: url(/img/big-background.png) repeat, #3B010B;
+    background-size: cover;
     overflow-x: hidden;
 }
 
@@ -14,30 +15,29 @@ body {
 }
 .image-placeholder {
     width: 100%;
-    height: 150px;
+    height: 30vh;
     background-color: #d9d9d9;
     border-radius: 10px;
     margin-bottom: 15px;
 }
-.qty-control {
+.image-placeholder img{
+    object-fit: cover;
+    width: 100%;
+    height: 100%;
+    border-radius: 10px;
+}
+.qty-control{
     display: flex;
-    justify-content: center;
     align-items: center;
-    gap: 10px;
-    margin: 20px 0;
+    margin-bottom: 10px;
 }
-.qty-control button {
-    width: 30px; height: 30px;
-    border-radius: 50%;
-    border: none;
-    cursor: pointer;
-}
+
 .qty-control input {
     width: 50px;
     text-align: center;
-    background: transparent;
-    border: none;
-    color: white;
+    padding: 10px;
+    margin-left: 10px;
+    flex: 1;
     font-size: 1.2rem;
 }
 .btn-confirm {
