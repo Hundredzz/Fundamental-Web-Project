@@ -4,6 +4,8 @@
     --color-gold-muted: #F2D9A3;
 }
 
+body,button,input,select{font-family: "Prompt", sans-serif;}
+
 .side-menu {
     display: flex;
     flex-direction: column;

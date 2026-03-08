@@ -2,7 +2,19 @@
     <% if (data && data.length> 0) { %>
         <% data.forEach(product=> { %>
             <div class="product-card">
+                <div class="img-container">
                 <img src="/img/product_image/<%= product.img_path %>" alt="">
+                <div class="barcode-div">
+                    <svg class="barcode" 
+                        jsbarcode-format="CODE128" 
+                        jsbarcode-value="<%= product.product_id %>" 
+                        jsbarcode-height="35"
+                        
+                        jsbarcode-fontSize="14">
+                    </svg>
+                </div>
+                </div>
+                
                 <h2>
                     <%= product.product_name %>
                 </h2>
@@ -14,14 +26,7 @@
                 </p>
                 <p style="font-size: 0.9rem;">คงเหลือ : <%= product.total_quantity%>
                 </p>
-                <div style="text-align: center; margin-bottom: 10px;">
-                    <svg class="barcode" 
-                        jsbarcode-format="CODE128" 
-                        jsbarcode-value="<%= product.product_id %>" 
-                        jsbarcode-height="35"
-                        jsbarcode-fontSize="14">
-                    </svg>
-                </div>
+                
                 <div class="button-container">
                     <button class="detail-btn" data="<%=product.product_id%>"
                         onclick="showDetail(this)">ดูรายละเอียด</button>
