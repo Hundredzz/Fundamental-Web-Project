@@ -1,7 +1,7 @@
 {
   "name": "fundamental-web-project",
   "version": "1.0.0",
-  "description": "",
+  "description": "username : Admin1 email : art122@gmail.com password : Admin@123456",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
