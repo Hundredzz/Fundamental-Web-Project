@@ -175,7 +175,7 @@ body:has(.popup-overlay.active) {
 }
 
 /* The Pop-up Box Itself */
-.popup-content {
+.popup-content-product {
     display: flex;
     background-color: var(--color-cream);
     padding: 30px;
@@ -185,39 +185,39 @@ body:has(.popup-overlay.active) {
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
 }
 
-.popup-content .left {
+.popup-content-product .left {
     width: 40%;
     height: auto;
     max-height: 100%;
     margin-right: 30px;
 }
 
-.popup-content .left img {
+.popup-content-product .left img {
     object-fit: cover;
     height: 100%;
     width: 100%;
     border-radius: 7px;
 }
 
-.popup-content .right {
+.popup-content-product .right {
     position: relative;
     flex: 1;
     padding-left: 30px;
 }
 
-.popup-content .right h2 {
+.popup-content-product .right h2 {
     color: var(--color-cherry);
     font-size: 1.7rem;
     text-align: center;
     margin: 0;
 }
 
-.popup-content .right p {
+.popup-content-product .right p {
     color: var(--color-cherry-dark);
     margin: 0;
 }
 
-.popup-content .right .close-btn {
+.popup-content-product .right .close-btn {
     position: absolute;
     right: 0;
     top: 0;
@@ -228,7 +228,7 @@ body:has(.popup-overlay.active) {
     cursor: pointer;
 }
 
-.popup-content #info-container {
+.popup-content-product #info-container {
     box-sizing: border-box;
     display: flex;
     flex-direction: column;

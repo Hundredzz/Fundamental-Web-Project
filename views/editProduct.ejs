@@ -4,8 +4,95 @@
 <head>
     <title>Product</title>
     <link rel="stylesheet" href="/css/search.css">
+    <link rel="stylesheet" href="/css/button.css">
     <link rel="stylesheet" href="/css/editProduct.css">
     <%- include('head') %>
+    <style>
+        /* ---- Modal Overlay ---- */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.45);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-overlay.active {
+            display: flex;
+        }
+        .modal-box {
+            background: #fff;
+            border-radius: 12px;
+            padding: 28px 32px;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+            position: relative;
+            animation: modalIn 0.18s ease;
+        }
+        @keyframes modalIn {
+            from { transform: scale(0.93); opacity: 0; }
+            to   { transform: scale(1);    opacity: 1; }
+        }
+        .modal-box h3 {
+            margin: 0 0 18px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #1e293b;
+        }
+        .modal-box input[type="text"] {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1.5px solid #cbd5e1;
+            border-radius: 7px;
+            font-size: 0.97rem;
+            box-sizing: border-box;
+            margin-bottom: 10px;
+            transition: border-color 0.15s;
+        }
+        .modal-error {
+            color: #dc2626;
+            font-size: 0.85rem;
+            margin-bottom: 10px;
+            min-height: 18px;
+        }
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 6px;
+        }
+        .modal-btn {
+            padding: 9px 22px;
+            border-radius: 7px;
+            font-size: 0.93rem;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            transition: opacity 0.15s;
+        }
+        .modal-close {
+            position: absolute;
+            top: 14px; right: 16px;
+            background: none; border: none;
+            font-size: 1.3rem; cursor: pointer;
+            color: #94a3b8; line-height: 1;
+        }
+        .modal-close:hover { color: #475569; }
+
+        /* ---- Add button next to select ---- */
+        .select-with-add {
+            display: flex;
+            gap: 5px;
+            align-items: center;
+            width: 100%;
+        }
+        
+        .style-button{
+            padding: 10px;
+        }
+    </style>
 </head>
 
 <body>
@@ -18,18 +105,29 @@
             <form action="<%= url_path %>" method="POST" class="content-layout" enctype="multipart/form-data">
                 <div class="image-placeholder">
                     <label for="product-image" id="image-upload-label">
-                        <div id="upload-content-placeholder">
-                            <span id="upload-icon">📷</span>
-                            คลิกเพื่ออัปโหลดรูปภาพ
-                        </div>
-                        <img id="image-preview" src="#" alt="ตัวอย่างรูปภาพ" style="display: none;" />
+
+                        <% if (product && product.img_path) { %>
+                            <div id="upload-content-placeholder">
+                                <span id="upload-icon">📷</span>
+                                คลิกเพื่ออัปโหลดรูปภาพ
+                            </div>
+                            <img id="image-preview" src="/img/product_image/<%= product.img_path %>" alt="ตัวอย่างรูปภาพ"
+                                style="display: block;" />
+                        <% } else { %>
+                            <div id="upload-content-placeholder" style="display: block;">
+                                <span id="upload-icon">📷</span>
+                                คลิกเพื่ออัปโหลดรูปภาพ
+                            </div>
+                            <img id="image-preview" src="#" alt="ตัวอย่างรูปภาพ" style="display: none;" />
+                        <% } %>
+
                     </label>
-                    <input type="file" id="product-image" name="product_image" accept="image/*" style="display: none;" />
+                    <input type="file" id="product-image" name="product_image" accept="image/*"
+                        style="display: none;" />
                 </div>
+
                 <div class="form-card">
-
-
-                    <input type="hidden" name="image_path" id="final-image-path">
+                    <input type="hidden" name="image_pt" id="final-image-path">
 
                     <div class="form-group">
                         <label for="code">รหัสสินค้า :</label>
@@ -41,97 +139,230 @@
                     </div>
                     <div class="form-group">
                         <label for="brand">แบรนด์ :</label>
-                        <select name="brand" id="brand" required>
-                            <option value="" disabled selected>เลือกแบรนด์</option>
-                            <% brands.forEach(brand=> { %>
-                                <option value="<%= brand.brand_id %>" <%=product.brand_name===brand.brand_name
-                                    ? 'selected' : '' %>>
-                                    <%= brand.brand_name %>
-                                </option>
+                        <div class="select-with-add">
+                            <select name="brand" id="brand" required>
+                                <option value="" disabled selected>เลือกแบรนด์</option>
+                                <% brands.forEach(brand => { %>
+                                    <option value="<%= brand.brand_id %>" <%= product.brand_name === brand.brand_name ? 'selected' : '' %>>
+                                        <%= brand.brand_name %>
+                                    </option>
                                 <% }) %>
-                        </select>
+                            </select>
+                            <button type="button" class="style-button" onclick="openModal('brand')" title="เพิ่มแบรนด์ใหม่">＋</button>
+                        </div>
                     </div>
                     <div class="form-group">
                         <label for="category">ประเภทสินค้า :</label>
-                        <select name="category" id="category" required>
-                            <option value="" disabled selected>เลือกประเภท</option>
-                            <% categories.forEach(category=> { %>
-                                <option value="<%= category.category_id %>"
-                                    <%=product.category_name===category.category_name ? 'selected' : '' %>>
-                                    <%= category.category_name %>
-                                </option>
+                        <div class="select-with-add">
+                            <select name="category" id="category" required>
+                                <option value="" disabled selected>เลือกประเภท</option>
+                                <% categories.forEach(category => { %>
+                                    <option value="<%= category.category_id %>" <%= product.category_name === category.category_name ? 'selected' : '' %>>
+                                        <%= category.category_name %>
+                                    </option>
                                 <% }) %>
-                        </select>
+                            </select>
+                            <button type="button" class="style-button" onclick="openModal('category')" title="เพิ่มประเภทใหม่">＋</button>
+                        </div>
                     </div>
                     <div class="form-group">
-                        <label for="supplier">ซัพพลายเออร์ :</label> <select name="supplier" id="supplier" required>
-                            <option value="" disabled selected>เลือกซัพพลายเออร์</option>
-                            <% suppliers.forEach(supplier=> { %>
-                                <option value="<%= supplier.supplier_id %>"
-                                    <%=product.supplier_name===supplier.supplier_name ? 'selected' : '' %>>
-                                    <%= supplier.supplier_name %>
-                                </option>
+                        <label for="supplier">ซัพพลายเออร์ :</label>
+                        <div class="select-with-add">
+                            <select name="supplier" id="supplier" required>
+                                <option value="" disabled selected>เลือกซัพพลายเออร์</option>
+                                <% suppliers.forEach(supplier => { %>
+                                    <option value="<%= supplier.supplier_id %>" <%= product.supplier_name === supplier.supplier_name ? 'selected' : '' %>>
+                                        <%= supplier.supplier_name %>
+                                    </option>
                                 <% }) %>
-                        </select>
+                            </select>
+                            <button type="button" class="style-button" onclick="openModal('supplier')" title="เพิ่มซัพพลายเออร์ใหม่">＋</button>
+                        </div>
                     </div>
+
                     <div class="form-group">
                         <label for="net_content">ปริมาณสุทธิ :</label>
                         <input type="text" id="net_content" name="net_content" value="<%= product.net_content %>" required>
                     </div>
                     <div class="form-group">
                         <label for="cost_price">ราคาทุน :</label>
-                        <input type="number" step="0.01" id="cost_price" name="cost_price"
-                            value="<%= product.cost_price %>" required>
+                        <input type="number" step="0.01" id="cost_price" name="cost_price" value="<%= product.cost_price %>" required>
                     </div>
                     <div class="form-group">
                         <label for="selling_price">ราคาขาย :</label>
-                        <input type="number" step="0.01" id="selling_price" name="selling_price"
-                            value="<%= product.selling_price %>" required>
+                        <input type="number" step="0.01" id="selling_price" name="selling_price" value="<%= product.selling_price %>" required>
                     </div>
                     <div class="form-group">
                         <label for="fda_no">เลขที่จดแจ้ง :</label>
                         <input type="text" id="fda_no" name="fda_no" value="<%= product.fda_number %>">
                     </div>
+                </div>
 
-                    <div class="submit-btn-container">
-                        <button type="button" class="cancle-btn" onclick="window.location.href='/product'">ยกเลิก</button>
-                        <button type="submit" class="submit-btn">บันทึก</button>
-                    </div>
-
+                <div class="submit-btn-container">
+                    <button type="button" onclick="window.location.href='/product'" class="style-button">ยกเลิก</button>
+                    <button type="submit" class="style-button submit-btn">บันทึก</button>
                 </div>
             </form>
-
-
         </div>
 
-        <script>
-            document.addEventListener('DOMContentLoaded', function () {
-                const fileInput = document.getElementById('product-image');
-                const imagePreview = document.getElementById('image-preview');
-                const placeholderContent = document.getElementById('upload-content-placeholder');
+    <!-- ==================== MODALS ==================== -->
 
-                fileInput.addEventListener('change', function (event) {
-                    const file = event.target.files[0];
+    <!-- Brand Modal -->
+    <div class="modal-overlay" id="modal-brand">
+        <div class="modal-box">
+            <button class="modal-close" onclick="closeModal('brand')" type="button">✕</button>
+            <h3>เพิ่มแบรนด์ใหม่</h3>
+            <input type="text" id="input-brand" placeholder="ชื่อแบรนด์" maxlength="100">
+            <div class="modal-error" id="error-brand"></div>
+            <div class="modal-actions">
+                <button class="style-button" onclick="closeModal('brand')" type="button">ยกเลิก</button>
+                <button class="style-button" id="btn-brand" onclick="submitModal('brand')" type="button">บันทึก</button>
+            </div>
+        </div>
+    </div>
 
-                    if (file) {
-                        if (!file.type.startsWith('image/')) {
-                            alert('โปรดเลือกไฟล์รูปภาพเท่านั้น');
-                            fileInput.value = '';
-                            return;
-                        }
+    <!-- Category Modal -->
+    <div class="modal-overlay" id="modal-category">
+        <div class="modal-box">
+            <button class="modal-close" onclick="closeModal('category')" type="button">✕</button>
+            <h3>เพิ่มประเภทสินค้าใหม่</h3>
+            <input type="text" id="input-category" placeholder="ชื่อประเภทสินค้า" maxlength="100">
+            <div class="modal-error" id="error-category"></div>
+            <div class="modal-actions">
+                <button class="style-button" onclick="closeModal('category')" type="button">ยกเลิก</button>
+                <button class="style-button" id="btn-category" onclick="submitModal('category')" type="button">บันทึก</button>
+            </div>
+        </div>
+    </div>
 
-                        // Just show the preview! No background uploading needed anymore.
-                        const reader = new FileReader();
-                        reader.onload = function (e) {
-                            imagePreview.src = e.target.result;
-                            imagePreview.style.display = 'block';
-                            placeholderContent.style.display = 'none';
-                        }
-                        reader.readAsDataURL(file);
+    <!-- Supplier Modal -->
+    <div class="modal-overlay" id="modal-supplier">
+        <div class="modal-box">
+            <button class="modal-close" onclick="closeModal('supplier')" type="button">✕</button>
+            <h3>เพิ่มซัพพลายเออร์ใหม่</h3>
+            <input type="text" id="input-supplier" placeholder="ชื่อซัพพลายเออร์" maxlength="100">
+            <div class="modal-error" id="error-supplier"></div>
+            <div class="modal-actions">
+                <button class="style-button" onclick="closeModal('supplier')" type="button">ยกเลิก</button>
+                <button class="style-button" id="btn-supplier" onclick="submitModal('supplier')" type="button">บันทึก</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== SCRIPTS ==================== -->
+    <script>
+        // --- Image preview ---
+        document.addEventListener('DOMContentLoaded', function () {
+            const fileInput = document.getElementById('product-image');
+            const imagePreview = document.getElementById('image-preview');
+            const placeholderContent = document.getElementById('upload-content-placeholder');
+
+            fileInput.addEventListener('change', function (event) {
+                const file = event.target.files[0];
+                if (file) {
+                    if (!file.type.startsWith('image/')) {
+                        alert('โปรดเลือกไฟล์รูปภาพเท่านั้น');
+                        fileInput.value = '';
+                        return;
                     }
-                });
+                    const reader = new FileReader();
+                    reader.onload = function (e) {
+                        imagePreview.src = e.target.result;
+                        imagePreview.style.display = 'block';
+                        placeholderContent.style.display = 'none';
+                    };
+                    reader.readAsDataURL(file);
+                }
             });
-        </script>
+        });
+
+        // --- Modal config ---
+        const modalConfig = {
+            brand:    { api: '/api/brands',     idKey: 'brand_id',    nameKey: 'brand_name',    selectId: 'brand'    },
+            category: { api: '/api/categories', idKey: 'category_id', nameKey: 'category_name', selectId: 'category' },
+            supplier: { api: '/api/suppliers',  idKey: 'supplier_id', nameKey: 'supplier_name', selectId: 'supplier' },
+        };
+
+        function openModal(type) {
+            document.getElementById(`input-${type}`).value = '';
+            document.getElementById(`error-${type}`).textContent = '';
+            document.getElementById(`modal-${type}`).classList.add('active');
+            setTimeout(() => document.getElementById(`input-${type}`).focus(), 80);
+        }
+
+        function closeModal(type) {
+            document.getElementById(`modal-${type}`).classList.remove('active');
+        }
+
+        // Close modal when clicking outside the box
+        document.querySelectorAll('.modal-overlay').forEach(overlay => {
+            overlay.addEventListener('click', function(e) {
+                if (e.target === this) this.classList.remove('active');
+            });
+        });
+
+        // Submit on Enter key
+        ['brand', 'category', 'supplier'].forEach(type => {
+            document.getElementById(`input-${type}`).addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') { e.preventDefault(); submitModal(type); }
+            });
+        });
+
+        async function submitModal(type) {
+            const cfg = modalConfig[type];
+            const input = document.getElementById(`input-${type}`);
+            const errorEl = document.getElementById(`error-${type}`);
+            const btn = document.getElementById(`btn-${type}`);
+            const name = input.value.trim();
+
+            errorEl.textContent = '';
+
+            if (!name) {
+                errorEl.textContent = 'กรุณากรอกชื่อก่อนบันทึก';
+                input.focus();
+                return;
+            }
+
+            btn.disabled = true;
+            btn.textContent = 'กำลังบันทึก...';
+
+            try {
+                const res = await fetch(cfg.api, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ [cfg.nameKey]: name })
+                });
+
+                const data = await res.json();
+
+                if (!res.ok) {
+                    errorEl.textContent = data.error || 'เกิดข้อผิดพลาด';
+                    return;
+                }
+
+                // Add the new option to the select and auto-select it (alphabetical order)
+                const select = document.getElementById(cfg.selectId);
+                const option = new Option(data[cfg.nameKey], data[cfg.idKey], true, true);
+                let inserted = false;
+                for (let i = 1; i < select.options.length; i++) {
+                    if (select.options[i].text.localeCompare(data[cfg.nameKey]) > 0) {
+                        select.insertBefore(option, select.options[i]);
+                        inserted = true;
+                        break;
+                    }
+                }
+                if (!inserted) select.add(option);
+                select.value = data[cfg.idKey];
+
+                closeModal(type);
+            } catch (err) {
+                errorEl.textContent = 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้';
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'บันทึก';
+            }
+        }
+    </script>
 </body>
 
 </html>

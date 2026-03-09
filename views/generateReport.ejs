@@ -8,27 +8,26 @@
     <link rel="stylesheet" href="/css/button.css">
     <link rel="stylesheet" href="/css/search.css">
     <link rel="stylesheet" href="/css/history.css">
+    <link rel="stylesheet" href="/css/errorBox.css">
     <%- include('head') %>
         <style>
+            .table-scroll-container, .container{
+                width: 90%;
+            }
+            .main-content{
+                margin-top: 50px;
+            }
             .hidden {
                 display: none !important;
             }
 
-            .error-msg {
-                color: #d9534f;
-                margin-top: 15px;
-                font-weight: bold;
-                text-align: center;
-                background-color: #f2dede;
-                padding: 10px 20px;
-                border-radius: 4px;
-            }
         </style>
 </head>
 
 <body>
     <%- include('nav') %>
         <div class="main-content" id="main-content">
+            <div style="display: flex; position: relative; justify-content: center; width: 90%;">
             <h1 style="color: #75162D; margin-top: 20px;">
                 <% if(type==='movement' ) { %> รายงานความเคลื่อนไหว
                     <% } else if(type==='stock' ) { %> รายงานสต็อกสินค้าคงเหลือ
@@ -36,23 +35,27 @@
                             <% } %>
             </h1>
 
+            <div class="action-bar hidden" id="actionBar" style="position: absolute; right: 0;">
+                                    <button id="exportBtn" class="style-button">Export (CSV)</button>
+                                </div>
+            </div>
             <form id="reportForm" class="container" onsubmit="event.preventDefault(); generateTable();">
                 <div class="search-container">
-                    <p>ระบุสินค้า :</p>
+                    <p>ระบุสินค้า</p>
                     <input type="text" id="productName" name="productName" placeholder="ชื่อหรือรหัสสินค้า"></input>
                 </div>
                 <% if (type==='movement' ) { %>
                     <div class="search-container">
-                        <p>ตั้งแต่วันที่:</p>
+                        <p>ตั้งแต่วันที่</p>
                         <input type="date" id="startDate" name="startDate">
                     </div>
                     <div class="search-container">
-                        <p>ถึงวันที่:</p>
+                        <p>ถึงวันที่</p>
                         <input type="date" id="endDate" name="endDate">
                     </div>
 
                     <div class="search-container">
-                        <p>ประเภทรายการ :</p>
+                        <p>ประเภทรายการ</p>
                         <select name="transType" id="transType">
                             <option value="">ทั้งหมด</option>
                             <option value="รับสินค้า">รับสินค้า</option>
@@ -60,16 +63,17 @@
                         </select>
                     </div>
                     <div class="search-container">
-                        <p>ผู้ทำรายการ :</p>
+                        <p>ผู้ทำรายการ</p>
                         <input type="text" name="employee_name" id="employee_name" placeholder="ผู้ทำรายการ">
                     </div>
                     <div class="search-container">
-                        <p>เรียงลำดับตาม:</p>
+                        <p>เรียงลำดับตาม</p>
                         <select id="sortMovement" name="sortMovement">
                             <option value="date_desc">วันที่ (ใหม่สุดไปเก่าสุด)</option>
                             <option value="date_asc">วันที่ (เก่าสุดไปใหม่สุด)</option>
-                            <option value="type">ประเภทรายการ (รับ-จ่าย)</option>
-                            <option value="product_name">ชื่อสินค้า (A-Z)</option>
+                            <option value="type_desc">ประเภทรายการ (รับ-จ่าย)</option>
+                            <option value="type_asc">ประเภทรายการ (จ่าย-รับ)</option>
+                            <option value="product_name">ชื่อสินค้า</option>
                             <option value="amount_desc">จำนวน (มากไปน้อย)</option>
                             <option value="amount_asc">จำนวน (น้อยไปมาก)</option>
                         </select>
@@ -78,7 +82,7 @@
                     <% } else if (type==='stock' ) { %>
 
                         <div class="search-container">
-                            <p>แบรนสินค้า :</p>
+                            <p>แบรนสินค้า</p>
                             <select id="brandId" name="brandId">
                                 <option value="">ทั้งหมด</option>
                                 <% brands.forEach(function(brand) { %>
@@ -89,11 +93,11 @@
                             </select>
                         </div>
                         <div class="search-container">
-                                <p>คงเหลือต่ำกว่า (ชิ้น) :</p>
+                                <p>คงเหลือต่ำกว่า (ชิ้น)</p>
                                 <input type="number" id="productLeft" name="productLeft" min="1" placeholder="จำนวนสินค้า">
                             </div>
                         <div class="search-container">
-                            <p>เรียงลำดับตาม:</p>
+                            <p>เรียงลำดับตาม</p>
                             <select id="sortBy" name="sortBy">
                                 <option value="product_id">รหัสสินค้า</option>
                                 <option value="product_name">ชื่อสินค้า</option>
@@ -105,7 +109,7 @@
                         
                         <% } else if (type==='expire' ) { %>
                             <div class="search-container">
-                            <p>แบรนสินค้า :</p>
+                            <p>แบรนสินค้า</p>
                             <select id="brandId" name="brandId">
                                 <option value="">ทั้งหมด</option>
                                 <% brands.forEach(function(brand) { %>
@@ -116,7 +120,7 @@
                             </select>
                         </div>
                         <div class="search-container">
-                    <p>รหัสล็อต :</p>
+                    <p>รหัสล็อต</p>
                     <input type="text" id="lotCode" name="lotCode" placeholder="รหัสล็อต"></input>
                 </div>
                             <div class="search-container">
@@ -140,11 +144,7 @@
 
         </form>
 
-        <div id="errorBox" class="error-msg hidden">
-                                </div>
-
-                                <div class="action-bar hidden" id="actionBar">
-                                    <button id="exportBtn" class="style-button">Export (CSV)</button>
+        <div id="error-box" class="error-box hidden" style="margin-top: 10px;">
                                 </div>
 
                                 <div class="table-scroll-container hidden" id="tableContainer">
@@ -165,7 +165,7 @@
             async function generateTable() {
 
                 // รีเซ็ต UI
-                const errorBox = document.getElementById('errorBox');
+                const errorBox = document.getElementById('error-box');
                 const tableContainer = document.getElementById('tableContainer');
                 const actionBar = document.getElementById('actionBar');
                 errorBox.classList.add('hidden');
@@ -211,10 +211,10 @@
                     if (productLeft) queryParams.append('productLeft', productLeft);
 
                 } else if (reportType === 'expire') {
-                    const expireDays = document.getElementById('expireDays')?.value;
-                    const brandId = document.getElementById('brandId')?.value;
-                    const lotCode = document.getElementById('lotCode')?.value;
-                    const sortBy = document.getElementById('sortBy')?.value;
+                    const expireDays = document.getElementById('expireDays').value;
+                    const brandId = document.getElementById('brandId').value;
+                    const lotCode = document.getElementById('lotCode').value;
+                    const sortBy = document.getElementById('sortBy').value;
 
                     if (expireDays) queryParams.append('expireDays', expireDays);
                     if (brandId) queryParams.append('brandId', brandId);
@@ -260,15 +260,15 @@
 
                 if (type === 'movement') {
                     thead.innerHTML = `<tr>
-                    <th>วันที่</th><th>ประเภทรายการ</th><th>รหัสสินค้า</th>
-                    <th>ชื่อสินค้า</th><th>จำนวน</th><th>ผู้ทำรายการ</th>
+                    <th>วันที่</th><th>รหัสสินค้า</th><th>ชื่อสินค้า</th>
+                    <th>ประเภทรายการ</th><th>จำนวน</th><th>ผู้ทำรายการ</th>
                 </tr>`;
                     data.forEach(row => {
                         tbody.innerHTML += `<tr>
                         <td>${row.transaction_date}</td>
-                        <td>${row.transaction_type}</td>
                         <td>${row.product_id}</td>
                         <td>${row.product_name}</td>
+                        <td>${row.transaction_type}${row.branch_name ? ` (${row.branch_name})` : ''}</td>
                         <td>${row.change_amount}</td>
                         <td>${row.employee_name}</td>
                     </tr>`;

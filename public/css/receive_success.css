@@ -21,30 +21,15 @@ body {
 .modal-box {
     background-color: #5d0e1a; /* สีแดงเลือดหมู */
     color: white;
-    padding: 60px 100px;
+    padding: 50px 100px;
+    width: 40%;
+    box-sizing: border-box;
     border-radius: 15px;
     text-align: center;
     box-shadow: 0 0 20px rgba(0,0,0,0.5);
     border: 1px solid rgba(255,255,255,0.2);
 }
-
-.modal-box p {
-    font-size: 24px;
-    margin: 0 0 20px 0;
-    font-weight: bold;
+h1{
+    margin-bottom: 50px;
 }
 
-.btn-close {
-    display: inline-block;
-    padding: 8px 30px;
-    background-color: #f9e2b8;
-    color: #5d0e1a;
-    text-decoration: none;
-    border-radius: 5px;
-    font-weight: bold;
-    font-size: 16px;
-}
-
-.btn-close:hover {
-    background-color: white;
-}

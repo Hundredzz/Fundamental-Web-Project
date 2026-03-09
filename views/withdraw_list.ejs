@@ -19,12 +19,12 @@
                 <div>
                     <div class="search">
                         <input type="text" name="search" placeholder="ค้นหาสินค้า" id="search-text"
-                            onkeydown="if(event.key === 'Enter') changePage(this)">
-                        <button type="submit" onclick="changePage(this, 'productWithdraw')" class="style-button"><span
+                            onkeydown="if(event.key === 'Enter') changePage(this, 'productWithdraw' , '<%= branchId %>')">
+                        <button type="submit" onclick="changePage(this, 'productWithdraw' , '<%= branchId %>')" class="style-button"><span
                                 class="material-symbols-outlined search-icon">search</span><span>ค้นหา</span></button>
                     </div>
                     <div class="search">
-                        <select id="category-select" onchange="changePage(this, 'productWithdraw')">
+                        <select id="category-select" onchange="changePage(this, 'productWithdraw', '<%= branchId %>')">
                             <option value="">ประเภทสินค้า</option>
                             <% categories.forEach(category=> { %>
                                 <option value="<%= category.category_name %>">
@@ -33,7 +33,7 @@
                                 <% }) %>
                         </select>
 
-                        <select id="brand-select" onchange="changePage(this, 'productWithdraw')">
+                        <select id="brand-select" onchange="changePage(this, 'productWithdraw', '<%= branchId %>')">
                             <option value="">แบรนด์สินค้า</option>
                             <% brands.forEach(brand=> { %>
                                 <option value="<%= brand.brand_name %>">
@@ -50,4 +50,9 @@
         </div>
         <%- include('productPopup') %>
 </body>
+<script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+
+<script>
+    JsBarcode(".barcode").init();
+</script>
 </html>

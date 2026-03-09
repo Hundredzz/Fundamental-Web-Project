@@ -7,6 +7,7 @@
         <link rel="stylesheet" href="/css/search.css">
         <link rel="stylesheet" href="/css/button.css">
         <link rel="stylesheet" href="/css/showProduct.css">
+        <link rel="stylesheet" href="/css/popupManage.css">
         <link rel="stylesheet"
             href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&icon_names=search" />
         <script src="/script/productPopUp.js" defer></script>
@@ -79,6 +80,9 @@
         </div>
         <%- include('productPopup') %>
 
+        <div id="confirmPopup" class="popup-overlay">
+        </div>
+
 </body>
 <script>
     document.addEventListener('DOMContentLoaded', () => {
@@ -92,5 +96,10 @@
             }
         }
     });
+</script>
+<script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+
+<script>
+    JsBarcode(".barcode").init();
 </script>
 </html>

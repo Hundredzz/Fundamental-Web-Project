@@ -1,4 +1,4 @@
-function changePage(btnElement, ejsName) {
+function changePage(btnElement, ejsName, branchId) {
     const productSection = document.getElementById('product-sect');
     
     // 1. ALWAYS grab the current search and filter values
@@ -11,6 +11,7 @@ function changePage(btnElement, ejsName) {
     if (searchText) params.append('q', searchText);
     if (selectedCategory) params.append('category', selectedCategory);
     if (selectedBrand) params.append('brand', selectedBrand);
+    if (branchId) params.append('branch_id', branchId);
 
     let fetchUrl;
 
@@ -29,6 +30,7 @@ function changePage(btnElement, ejsName) {
         .then(response => response.json())
         .then(data => {
             productSection.innerHTML = data.html;
+            JsBarcode(".barcode").init();
             window.scrollTo({
                 top: 0
             });

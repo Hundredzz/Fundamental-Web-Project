@@ -5,6 +5,10 @@ body {
     overflow-x: hidden;
 }
 
+.main-content{
+    margin-top: 50px;
+}
+
 .withdraw-card {
     background-color: #5d0e1a;
     color: white;
@@ -40,12 +44,19 @@ body {
     flex: 1;
     font-size: 1.2rem;
 }
-.btn-confirm {
-    background: #f9e2b8;
-    color: #5d0e1a;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 5px;
-    font-weight: bold;
-    cursor: pointer;
-}
+
+.style-button{
+            width: 100%;
+            padding: 15px;
+            margin: 0;
+        }
+        .button-container{
+            display: flex;
+            gap: 10px;
+        }
+        .button-container button:nth-child(2){
+            background: none;
+            background-color: #009922;
+            color: white;
+           
+        }

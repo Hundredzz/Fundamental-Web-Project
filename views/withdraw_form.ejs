@@ -3,9 +3,12 @@
 <head>
     <%- include('head') %>
     <title>เบิกสินค้าจำนวน</title>
+    <link rel="stylesheet" href="/css/button.css">
     <link rel="stylesheet" href="/css/withdraw_layout.css">
     <link rel="stylesheet" href="/css/withdraw_form.css">
+    <link rel="stylesheet" href="/css/receive_success.css">
     <link rel="stylesheet" href="/css/search.css">
+    <link rel="stylesheet" href="/css/errorBox.css">
 </head>
 <body>
     <%- include('nav') %>
@@ -24,7 +27,23 @@
                     <label>หมายเหตุ :</label>
                     <input type="text" name="note" >
                 </div>
-                <button type="submit" class="btn-confirm">ยืนยันการเบิก</button>
+                <%if (typeof error !== 'undefined' && error === 'success') { %>
+                    <div class="overlay">
+            <div class="modal-box">
+                <h1>เบิกจ่ายสินค้าสำเร็จ</h1>
+                <button type="button" onclick="window.location.href='/withdraw/select-product?branch_id=<%=branchId%>'" class="style-button">ตกลง</a>
+            </div>
+        </div>
+                    <%} else if (typeof error !== 'undefined' && error) { %>
+        <div class="error-box" style="margin-bottom: 15px;">
+            <span>⚠️</span>
+            <span><%= error %></span>
+        </div>
+        <% } %>
+                <div class="button-container">
+                    <button type="button" class="style-button" onclick="window.location.href='/withdraw/select-product?branch_id=<%=branchId%>'">ยกเลิก</button>
+                <button type="submit" class="style-button">ยืนยันการเบิก</button>
+                </div>
             </form>
         </div>
     </div>

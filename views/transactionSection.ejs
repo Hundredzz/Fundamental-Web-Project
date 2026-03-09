@@ -1,11 +1,10 @@
 <% if (transactions && transactions.length> 0) { %>
 <% transactions.forEach(function(tran) { %>
                     <tr>
-                        <td><%= tran.transaction_id %></td>
-                        <td><%= tran.product_name %> (<%= tran.product_id %>)</td>
-                        <td><%= tran.change_amount %></td>
                         <td><%= tran.transaction_date %></td>
+                        <td><%= tran.product_name %> (<%= tran.product_id %>)</td>
                         <td><%= tran.transaction_type %></td> 
+                        <td><%= tran.change_amount %></td>
                         <td><%= tran.first_name %> <%= tran.last_name %></td>
                     </tr>
                 <% }); %>

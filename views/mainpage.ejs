@@ -4,6 +4,7 @@
 <head>
     <%- include('head') %>
     <title>mainpage</title>
+    <link rel="stylesheet" href="css/button.css">
     <style>
         body {
             margin: 0;
@@ -140,8 +141,8 @@
             overflow: hidden;
         }
         .noti-header { padding: 10px; font-weight: bold; border-bottom: 1px solid #eee; color: #333; }
-        .noti-footer { padding: 8px; text-align: center; background: #f9f9f9; font-size: 13px; }
-        .noti-footer a { color: #75162D; text-decoration: none; }
+        .noti-footer { padding: 8px; margin: 0; text-align: center; font-size: 13px; width: 100%; border: none;}
+.noti-footer:hover {transform: none;}
         .noti-item {
             padding: 12px;
             border-bottom: 1px solid #f0f0f0;
@@ -171,9 +172,9 @@
             <div id="noti-list" class="noti-list">
                 <div class="noti-item empty">กำลังโหลด...</div>
             </div>
-            <div class="noti-footer">
-                <a href="/expiry">ดูทั้งหมด</a>
-            </div>
+            <button class="noti-footer style-button" onclick="window.location.href = '/expiry'">
+                ดูทั้งหมด
+            </button>
         </div>
     </div>
     <div class="main-content" id="main-content">
@@ -218,6 +219,7 @@
         </div>
     </div>
     <div id="overlay" class="overlay" onclick="togglePlusMenu()"></div>
+    <% if ( user.role!='Manager' ) { %>
 
     <div id="fab-menu" class="fab-menu">
         <div class="menu-item" onclick="window.location.href='/receive'">
@@ -237,6 +239,7 @@
     <div class="add-icon-container" onclick="togglePlusMenu()">
         <img src="/img/add.svg" id="main-icon" class="add-icon">
     </div>
+    <% } %>
 
     
 
