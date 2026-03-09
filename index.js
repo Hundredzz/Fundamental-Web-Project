@@ -191,7 +191,8 @@ app.get("/receive", isAuthenticated, authorizeRoles([ "Staff", "StaffBranch"]), 
             if (err) return res.status(500).send("Database error");
             res.render('receive_stock', {
                 data: rows, 
-                currentPage: page, totalPages: totalPages
+                currentPage: page, totalPages: totalPages,
+                branchId: ''
             });
         });
     });
@@ -1569,13 +1570,6 @@ app.get("/expiry", isAuthenticated, (req, res) => {
     });
 });
 
-app.get('/api/brands', isAuthenticated, authorizeRoles(['Manager', 'Staff']), (req, res) => {
-    db.all(`SELECT * FROM Brands ORDER BY brand_name`, [], (err, rows) => {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json(rows);
-    });
-});
-
 app.post('/api/brands', isAuthenticated, authorizeRoles(['Manager', 'Staff']), (req, res) => {
     const { brand_name } = req.body;
     if (!brand_name || brand_name.trim() === '')
@@ -1592,23 +1586,6 @@ app.post('/api/brands', isAuthenticated, authorizeRoles(['Manager', 'Staff']), (
                 .sort((a, b) => a.brand_name.localeCompare(b.brand_name));
             res.status(201).json(newBrand);
         });
-    });
-});
-
-app.delete('/api/brands/:id', isAuthenticated, authorizeRoles(['Manager']), (req, res) => {
-    db.run(`DELETE FROM Brands WHERE brand_id = ?`, [req.params.id], function(err) {
-        if (err) return res.status(500).json({ error: err.message });
-        if (this.changes === 0) return res.status(404).json({ error: 'ไม่พบแบรนด์นี้' });
-        app.locals.brands = (app.locals.brands || []).filter(b => b.brand_id != req.params.id);
-        res.json({ success: true });
-    });
-});
-
-// --- Categories ---
-app.get('/api/categories', isAuthenticated, authorizeRoles(['Manager', 'Staff']), (req, res) => {
-    db.all(`SELECT * FROM Categories ORDER BY category_name`, [], (err, rows) => {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json(rows);
     });
 });
 
@@ -1631,23 +1608,6 @@ app.post('/api/categories', isAuthenticated, authorizeRoles(['Manager', 'Staff']
     });
 });
 
-app.delete('/api/categories/:id', isAuthenticated, authorizeRoles(['Manager']), (req, res) => {
-    db.run(`DELETE FROM Categories WHERE category_id = ?`, [req.params.id], function(err) {
-        if (err) return res.status(500).json({ error: err.message });
-        if (this.changes === 0) return res.status(404).json({ error: 'ไม่พบประเภทสินค้านี้' });
-        app.locals.categories = (app.locals.categories || []).filter(c => c.category_id != req.params.id);
-        res.json({ success: true });
-    });
-});
-
-// --- Suppliers ---
-app.get('/api/suppliers', isAuthenticated, authorizeRoles(['Manager', 'Staff']), (req, res) => {
-    db.all(`SELECT * FROM Suppliers ORDER BY supplier_name`, [], (err, rows) => {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json(rows);
-    });
-});
-
 app.post('/api/suppliers', isAuthenticated, authorizeRoles(['Manager', 'Staff']), (req, res) => {
     const { supplier_name } = req.body;
     if (!supplier_name || supplier_name.trim() === '')
@@ -1667,13 +1627,8 @@ app.post('/api/suppliers', isAuthenticated, authorizeRoles(['Manager', 'Staff'])
     });
 });
 
-app.delete('/api/suppliers/:id', isAuthenticated, authorizeRoles(['Manager']), (req, res) => {
-    db.run(`DELETE FROM Suppliers WHERE supplier_id = ?`, [req.params.id], function(err) {
-        if (err) return res.status(500).json({ error: err.message });
-        if (this.changes === 0) return res.status(404).json({ error: 'ไม่พบซัพพลายเออร์นี้' });
-        app.locals.suppliers = (app.locals.suppliers || []).filter(s => s.supplier_id != req.params.id);
-        res.json({ success: true });
-    });
+app.get('/select-path:id', isAuthenticated, authorizeRoles(['Manager', 'Staff']), (req, res) => {
+    res.render('selectPath', {data:req.params.id});
 });
 // ==========================================
 

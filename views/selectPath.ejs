@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <%- include('head') %>
+    <title>Report</title>
+    <style>
+        body {
+            margin: 0;
+            background: url(/img/big-background.png) repeat, #3B010B;
+            background-size: cover;
+            overflow-x: hidden;
+            
+        }
+
+        .main-content {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            box-sizing: border-box;
+            margin-top: 0;
+        }
+
+        h1 {
+            color: #75162D;
+            margin: 1.5%;
+            text-align: center;
+        }
+
+        .report-button {
+            background-color: #75162D;
+            width: 35%;
+            color: #f2e5c6;
+            margin: 1.5%;
+            border-radius: 10px;
+            padding: 1.2%;
+            font-size: 20px;
+            border: 0px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .report-button:hover {
+            border-color: #3B010B;
+            border: 2px solid #3B010B;
+            transform: translateY(-3px) scale(1.03);
+        }
+        .report-button:active {
+            box-shadow: 0 0px 10px #3B010B;
+            transform: translateY(1px) scale(0.98);
+        }
+        @media screen and (max-width: 768px) {
+                .main-content {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 15px;
+                    width: 100%;
+                    box-sizing: border-box;
+                    
+                }
+                h1{
+                    font-size: 2rem;
+                }
+
+                .report-button {
+                    width: 100%;
+                    padding-block: 5%;
+                }
+            }
+    </style>
+    
+</head>
+
+<body>
+<%- include('nav') %>
+    <div class="main-content" id="main-content">
+        <h1>สร้างรายงาน</h1>
+        <button onclick="window.location.href = '/receiveForm/<%=data%>'" class="report-button">รายงานความเคลื่อนไหว</button>
+        <button onclick="window.location.href = '/createReport/expire'" class="report-button">สินค้าหมดอายุ</button>
+    </div>
+</body>
+
+</html>
