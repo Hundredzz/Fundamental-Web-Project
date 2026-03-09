@@ -30,7 +30,7 @@
                 width: 80%;
                 padding-block: 1%;
                 gap: 10px;
-                
+
                 position: relative;
             }
 
@@ -38,6 +38,7 @@
                 text-align: center;
                 color: #75162D;
             }
+
             .material-symbols-outlined {
                 font-variation-settings:
                     'FILL' 0,
@@ -58,11 +59,12 @@
                 cursor: pointer;
             }
 
-            .add-user-btn{
+            .add-user-btn {
                 position: absolute;
                 top: -80px;
                 right: 0;
             }
+
             @media screen and (max-width: 768px) {
                 .brand-side {
                     flex: 0;
@@ -79,10 +81,42 @@
                     position: relative;
                 }
 
-                .table-scroll-container {
-                    width: 90%;
+                body {
+                    flex-direction: column !important;
+                    overflow-y: auto;
                 }
-
+                .main-content {
+                    max-height: none;
+                    height: auto;
+                    width: 100% !important;
+                    margin-left: 0 !important;
+                    padding: 20px 10px;
+                    justify-content: flex-start;
+                }
+                .container {
+                    flex-direction: column;
+                    width: 95%;
+                    align-items: stretch;
+                    gap: 5px;
+                }
+                h1{
+                    font-size: 1.5rem;
+                    margin-bottom: 20%;
+                }
+                input,
+                select,
+                .style-button {
+                    width: 100% !important;
+                    margin: 5px 0;
+                    box-sizing: border-box;
+                }
+                .add-user-btn {
+                    top: -10;
+                    right: 0;
+                }
+                .table-scroll-container {
+                    width: 95%;
+                }
             }
         </style>
 </head>
@@ -91,7 +125,7 @@
     <%- include('nav') %>
         <div id="main-content" class="main-content">
             <h1>จัดการผู้ใช้งาน</h1>
-            
+
             <form id="search-form" onsubmit="event.preventDefault(); search('/search/users');" class="container">
                 <input type="text" name="id" id="id" placeholder="ระบุรหัสพนักงาน">
                 <input type="text" name="username" id="username" placeholder="ระบุชื่อผู้ใช้">
@@ -105,7 +139,8 @@
                 </select>
                 <button type="submit" class="style-button"><span
                         class="material-symbols-outlined search-icon">search</span><span>ค้นหา</span></button>
-                <button class="style-button add-user-btn" type="button" onclick="window.location.href = '/add-user'">เพิ่มผู้ใช้</button>
+                <button class="style-button add-user-btn" type="button"
+                    onclick="window.location.href = '/add-user'">เพิ่มผู้ใช้</button>
             </form>
             <div class="table-scroll-container">
                 <table>
