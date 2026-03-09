@@ -8,6 +8,7 @@ const cookieParser = require("cookie-parser");
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const { error } = require("console");
 
 const app = express();
 
@@ -1024,15 +1025,15 @@ app.get("/product", isAuthenticated, authorizeRoles(["Manager", "Staff"]), (req,
             res.render('showProduct', {
                 data: rows, 
                 currentPage: page, totalPages: totalPages,
-                totalPages: Math.ceil(row.count / limit),
-                searchTerm: searchTerm
+                searchTerm: searchTerm,
+                branchId: ''
             });
         });
     });
 });
 
 app.get('/search/:ejsName', isAuthenticated, authorizeRoles(["Manager", "Staff"]), (req, res) => {
-    const q = req.query.q || ''; const category = req.query.category || ''; const brand = req.query.brand || '';
+    const q = req.query.q || ''; const category = req.query.category || ''; const brand = req.query.brand || ''; const branchId = req.query.branch_id || '';
     const limit = 18; const page = 1; const offset = 0;
 
     let sql = `
@@ -1075,7 +1076,15 @@ app.get('/search/:ejsName', isAuthenticated, authorizeRoles(["Manager", "Staff"]
 
         db.all(finalSql, finalParams, (err, rows) => {
             if (err) return res.status(500).json({ error: "Database error" });
-            res.render(req.params.ejsName, {ejsName:req.params.ejsName, data: rows, currentPage: page, totalPages: totalPages }, (err, html) => {
+            
+            // 2. ส่ง branchId กลับไปให้ EJS ด้วย
+            res.render(req.params.ejsName, {
+                ejsName: req.params.ejsName, 
+                data: rows, 
+                currentPage: page, 
+                totalPages: totalPages,
+                branchId: branchId  // <--- เพิ่มบรรทัดนี้
+            }, (err, html) => {
                 if (err) return res.status(500).json({ error: "Render error" });
                 res.json({ html: html });
             });
@@ -1245,10 +1254,16 @@ app.delete("/delete-product/:id", isAuthenticated, authorizeRoles(["Manager", "S
 });
 
 app.get('/receiveForm/:id', isAuthenticated,authorizeRoles([ "Staff", "StaffBranch"]), (req, res) => {
+    const errorMap = {
+        mfg_equal: "วันผลิตกับวันหมดอายุต้องไม่เป็นวันเดียวกัน",
+        mfg_greater: "วันผลิตต้องไม่มากกว่าวันหมดอายุ",
+        success: "success",
+    };
+    const error = errorMap[req.query.error] || null;
     fetch(`http://localhost:${port}/api/product/${req.params.id}`, { headers: { cookie: req.headers.cookie }})
         .then(response => response.json())
         .then(data => {
-            res.render('receive_form', {product: data});
+            res.render('receive_form', {product: data, error : error});
         })
         .catch(error => console.error('Error loading page:', error))
 });
@@ -1262,11 +1277,15 @@ app.post('/save-stock/:id', isAuthenticated, authorizeRoles([ "Staff", "StaffBra
     const transaction_date = (new Date(now - tzOffset)).toISOString().slice(0, 19).replace('T', ' ');
 
     let note = remark || ''; // ถ้าไม่มี mfd_date ให้ใช้ remark แทน
-    if (mfd_date) {
+    if (mfd_date < exp_date) {
         const mfd = new Date(mfd_date);
         const diffTime = Math.abs(now - mfd);
         const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
         note = `ได้รับสินค้า ${diffDays} วัน หลังจากวันผลิต`;
+    }else if (mfd_date > exp_date){
+        return res.redirect(`/receiveForm/${req.params.id}?error=mfg_greater`)
+    }else if (mfd_date == exp_date){
+        return res.redirect(`/receiveForm/${req.params.id}?error=mfg_equal`)
     }
 
     const transaction_type = 'รับสินค้า';
@@ -1295,7 +1314,7 @@ app.post('/save-stock/:id', isAuthenticated, authorizeRoles([ "Staff", "StaffBra
             }
 
             // บันทึกสำเร็จทั้ง 2 ตาราง
-            res.render('receive_success');
+            res.redirect(`/receiveForm/${req.params.id}?error=success`);
         });
     });
 });
@@ -1334,11 +1353,17 @@ app.get('/withdraw/select-product', isAuthenticated, authorizeRoles([ "Staff", "
 });
 
 app.get('/withdraw/item/:id/:branch', isAuthenticated, authorizeRoles([ "Staff", "StaffBranch"]), (req, res) => {
-    const branchId = req.params.branch;
+    const errorMap = {
+        invalid_quantity: "จำนวนสินค้าไม่ถูกต้อง กรุณาระบุจำนวนที่มากกว่า 0",
+        insufficient_stock: "ยอดสต็อกไม่เพียงพอสำหรับการเบิกจำนวนที่ระบุ",
+        db_error: "เกิดข้อผิดพลาดในฐานข้อมูล กรุณาลองใหม่อีกครั้ง",
+        success: "success",
+    };
+    const error = errorMap[req.query.error] || null;
 fetch(`http://localhost:${port}/api/product/${req.params.id}`, { headers: { cookie: req.headers.cookie }})
         .then(response => response.json())
         .then(data => {
-            res.render('withdraw_form', {product: data, branchId: branchId});
+            res.render('withdraw_form', {product: data, branchId: req.params.branch, error: error});
         })
         .catch(error => console.error('Error loading page:', error))
 });
@@ -1349,9 +1374,11 @@ app.post('/withdraw/confirm/:id/:branch', isAuthenticated, authorizeRoles([ "Sta
     const product_id = req.params.id;
     const withdrawQty = parseInt(quantity, 10);
     const employee_id = req.session.user.emp_id;
+    const backUrl = `/withdraw/item/${product_id}/${branch_id}`;
 
+    // 1. ตรวจสอบข้อมูล Input เบื้องต้น
     if (!product_id || isNaN(withdrawQty) || withdrawQty <= 0) {
-        return res.status(400).send("ข้อมูลไม่ถูกต้อง หรือระบุจำนวนไม่ถูกต้อง");
+        return res.redirect(`${backUrl}?error=invalid_quantity`);
     }
 
     const now = new Date();
@@ -1360,7 +1387,6 @@ app.post('/withdraw/confirm/:id/:branch', isAuthenticated, authorizeRoles([ "Sta
     const transaction_type = 'จ่ายสินค้า';
 
     // 2. ดึงข้อมูล Lot ของสินค้านี้ ที่มีของเหลืออยู่ โดยเรียงจากเก่าสุด (FIFO)
-    // ใช้ mfg_date (วันที่ผลิต) หรือ exp_date (วันหมดอายุ) ในการเรียง
     const selectLotsSql = `
         SELECT lot_id, quantity, lot_batch_code 
         FROM Lots 
@@ -1371,29 +1397,26 @@ app.post('/withdraw/confirm/:id/:branch', isAuthenticated, authorizeRoles([ "Sta
     db.all(selectLotsSql, [product_id], (err, lots) => {
         if (err) {
             console.error("Error fetching lots:", err.message);
-            return res.status(500).send("เกิดข้อผิดพลาดในการดึงข้อมูลสต็อก: " + err.message);
+            return res.redirect(`${backUrl}?error=db_error`);
         }
 
         // 3. ตรวจสอบว่าสินค้ามีพอให้เบิกหรือไม่
         const totalAvailable = lots.reduce((sum, lot) => sum + lot.quantity, 0);
         if (totalAvailable < withdrawQty) {
-            return res.status(400).send(`ยอดสต็อกไม่เพียงพอ (ต้องการเบิก ${withdrawQty} ชิ้น, แต่มีของในระบบเพียง ${totalAvailable} ชิ้น)`);
+            return res.redirect(`${backUrl}?error=insufficient_stock`);
         }
 
         // 4. คำนวณการหักยอดในแต่ละ Lot (ทำใน Memory ก่อนเขียนลง DB)
         let remainingToWithdraw = withdrawQty;
-        const updates = []; // เก็บข้อมูลเพื่อรอไป UPDATE
+        const updates = [];
 
         for (let lot of lots) {
-            if (remainingToWithdraw <= 0) break; // หักยอดครบแล้วให้หยุดลูป
+            if (remainingToWithdraw <= 0) break;
 
             if (lot.quantity >= remainingToWithdraw) {
-                // ถ้าล็อตนี้มีของ "พอ" หักยอดที่เหลือทั้งหมด
-                const newQty = lot.quantity - remainingToWithdraw;
-                updates.push({ lot_id: lot.lot_id, newQty: newQty });
+                updates.push({ lot_id: lot.lot_id, newQty: lot.quantity - remainingToWithdraw });
                 remainingToWithdraw = 0; 
             } else {
-                // ถ้าล็อตนี้มีของ "ไม่พอ" หักยอด ให้ปรับล็อตนี้เป็น 0 และนำยอดที่ขาดไปหักจากล็อตถัดไป
                 updates.push({ lot_id: lot.lot_id, newQty: 0 });
                 remainingToWithdraw -= lot.quantity;
             }
@@ -1403,38 +1426,37 @@ app.post('/withdraw/confirm/:id/:branch', isAuthenticated, authorizeRoles([ "Sta
         db.serialize(() => {
             db.run("BEGIN TRANSACTION");
 
-            // 5.1 อัปเดตตาราง Lots (เปลี่ยนมาใช้ db.run แทน db.prepare)
+            // 5.1 อัปเดตตาราง Lots
             updates.forEach(update => {
                 db.run(`UPDATE Lots SET quantity = ? WHERE lot_id = ?`, [update.newQty, update.lot_id], function(updateErr) {
                     if (updateErr) {
-                        console.error(`🚨 Error updating Lot (lot_id: ${update.lot_id}):`, updateErr.message);
+                        console.error(`Error updating Lot (lot_id: ${update.lot_id}):`, updateErr.message);
                     } else {
-                        console.log(`✅ อัปเดตสต็อก Lot lot_id ${update.lot_id} สำเร็จ: เหลือยอด ${update.newQty}`);
+                        console.log(`อัปเดตสต็อก Lot lot_id ${update.lot_id} สำเร็จ: เหลือยอด ${update.newQty}`);
                     }
                 });
             });
 
             // 5.2 บันทึกประวัติลงตาราง Transactions
             const finalNote = branch_id ? `เบิกไปสาขา ${branch_id} | ${note || ''}` : (note || '');
-            const sqlInsertTx = `INSERT INTO Transactions (product_id, employee_id, change_amount, transaction_type, transaction_date,destination_branch, note) VALUES (?, ?, ?, ?, ?, ?, ?)`;
+            const sqlInsertTx = `INSERT INTO Transactions (product_id, employee_id, change_amount, transaction_type, transaction_date, destination_branch, note) VALUES (?, ?, ?, ?, ?, ?, ?)`;
             
             db.run(sqlInsertTx, [product_id, employee_id, withdrawQty, transaction_type, transaction_date, branch_id, finalNote], function(txErr) {
                 if (txErr) {
-                    // หากเกิด Error ให้ ยกเลิก (ROLLBACK) ข้อมูล Lot ที่แก้ไขไปเมื่อกี้ทั้งหมด
                     db.run("ROLLBACK");
-                    console.error("🚨 Error inserting transaction:", txErr.message);
-                    return res.status(500).send("เกิดข้อผิดพลาดในการบันทึก Transaction: " + txErr.message);
+                    console.error("Error inserting transaction:", txErr.message);
+                    return res.redirect(`${backUrl}?error=db_error`);
                 }
 
                 // หากทุกอย่างราบรื่น ยืนยันการบันทึก (COMMIT)
                 db.run("COMMIT", (commitErr) => {
                     if (commitErr) {
-                        console.error("🚨 Commit error:", commitErr);
-                        return res.status(500).send("เกิดข้อผิดพลาดระดับฐานข้อมูล");
+                        console.error("Commit error:", commitErr);
+                        return res.redirect(`${backUrl}?error=db_error`);
                     }
                     
-                    // เสร็จสมบูรณ์ ส่งไปยังหน้า Success
-                    res.render('withdraw_success');
+                    // เสร็จสมบูรณ์
+                    res.redirect(`${backUrl}?error=success`);
                 });
             });
         });
@@ -1448,7 +1470,7 @@ app.get("/scan", isAuthenticated, authorizeRoles([ "Staff", "StaffBranch"]), (re
 });
 app.get('/fetch-product/:page/:ejsName', isAuthenticated, authorizeRoles(["Manager", "Staff", "StaffBranch"]), (req, res) => {
     const limit = 18; const page = parseInt(req.params.page) || 1; const offset = (page - 1) * limit;
-    const q = req.query.q || ''; const category = req.query.category || ''; const brand = req.query.brand || '';
+    const q = req.query.q || ''; const category = req.query.category || ''; const brand = req.query.brand || ''; const branchId = req.query.branch_id || '';
 
     let sql = `SELECT p.product_name AS product_name, p.img_path AS img_path, p.product_id AS product_id, c.category_name AS category_name, b.brand_name AS brand_name, COALESCE(SUM(l.quantity), 0) AS total_quantity
                FROM Products p LEFT JOIN Categories c ON p.category_id = c.category_id LEFT JOIN Brands b ON p.brand_id = b.brand_id LEFT JOIN Lots l ON p.product_id = l.product_id WHERE 1=1`;
@@ -1469,7 +1491,7 @@ app.get('/fetch-product/:page/:ejsName', isAuthenticated, authorizeRoles(["Manag
 
         db.all(finalSql, finalParams, (err, rows) => {
             if (err) return res.status(500).json({ error: "Database error" });
-            res.render(req.params.ejsName, {ejsName:req.params.ejsName, data: rows, currentPage: page, totalPages: totalPages }, (err, html) => {
+            res.render(req.params.ejsName, {ejsName:req.params.ejsName, data: rows, currentPage: page, totalPages: totalPages,branchId: branchId }, (err, html) => {
                 if (err) return res.status(500).json({ error: "Render error" });
                 res.json({ html: html });
             });
@@ -1544,6 +1566,113 @@ app.get("/expiry", isAuthenticated, (req, res) => {
         }
         // ส่งข้อมูลไปยังไฟล์ expiry.ejs
         res.render("expiry", { expiringProducts: rows, user: req.session.user });
+    });
+});
+
+app.get('/api/brands', isAuthenticated, authorizeRoles(['Manager', 'Staff']), (req, res) => {
+    db.all(`SELECT * FROM Brands ORDER BY brand_name`, [], (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(rows);
+    });
+});
+
+app.post('/api/brands', isAuthenticated, authorizeRoles(['Manager', 'Staff']), (req, res) => {
+    const { brand_name } = req.body;
+    if (!brand_name || brand_name.trim() === '')
+        return res.status(400).json({ error: 'กรุณาระบุชื่อแบรนด์' });
+
+    db.get(`SELECT brand_id FROM Brands WHERE brand_name = ?`, [brand_name.trim()], (err, row) => {
+        if (err) return res.status(500).json({ error: err.message });
+        if (row) return res.status(409).json({ error: 'ชื่อแบรนด์นี้มีอยู่ในระบบแล้ว' });
+
+        db.run(`INSERT INTO Brands (brand_name) VALUES (?)`, [brand_name.trim()], function(err) {
+            if (err) return res.status(500).json({ error: err.message });
+            const newBrand = { brand_id: this.lastID, brand_name: brand_name.trim() };
+            app.locals.brands = [...(app.locals.brands || []), newBrand]
+                .sort((a, b) => a.brand_name.localeCompare(b.brand_name));
+            res.status(201).json(newBrand);
+        });
+    });
+});
+
+app.delete('/api/brands/:id', isAuthenticated, authorizeRoles(['Manager']), (req, res) => {
+    db.run(`DELETE FROM Brands WHERE brand_id = ?`, [req.params.id], function(err) {
+        if (err) return res.status(500).json({ error: err.message });
+        if (this.changes === 0) return res.status(404).json({ error: 'ไม่พบแบรนด์นี้' });
+        app.locals.brands = (app.locals.brands || []).filter(b => b.brand_id != req.params.id);
+        res.json({ success: true });
+    });
+});
+
+// --- Categories ---
+app.get('/api/categories', isAuthenticated, authorizeRoles(['Manager', 'Staff']), (req, res) => {
+    db.all(`SELECT * FROM Categories ORDER BY category_name`, [], (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(rows);
+    });
+});
+
+app.post('/api/categories', isAuthenticated, authorizeRoles(['Manager', 'Staff']), (req, res) => {
+    const { category_name } = req.body;
+    if (!category_name || category_name.trim() === '')
+        return res.status(400).json({ error: 'กรุณาระบุชื่อประเภทสินค้า' });
+
+    db.get(`SELECT category_id FROM Categories WHERE category_name = ?`, [category_name.trim()], (err, row) => {
+        if (err) return res.status(500).json({ error: err.message });
+        if (row) return res.status(409).json({ error: 'ประเภทสินค้านี้มีอยู่ในระบบแล้ว' });
+
+        db.run(`INSERT INTO Categories (category_name) VALUES (?)`, [category_name.trim()], function(err) {
+            if (err) return res.status(500).json({ error: err.message });
+            const newCategory = { category_id: this.lastID, category_name: category_name.trim() };
+            app.locals.categories = [...(app.locals.categories || []), newCategory]
+                .sort((a, b) => a.category_name.localeCompare(b.category_name));
+            res.status(201).json(newCategory);
+        });
+    });
+});
+
+app.delete('/api/categories/:id', isAuthenticated, authorizeRoles(['Manager']), (req, res) => {
+    db.run(`DELETE FROM Categories WHERE category_id = ?`, [req.params.id], function(err) {
+        if (err) return res.status(500).json({ error: err.message });
+        if (this.changes === 0) return res.status(404).json({ error: 'ไม่พบประเภทสินค้านี้' });
+        app.locals.categories = (app.locals.categories || []).filter(c => c.category_id != req.params.id);
+        res.json({ success: true });
+    });
+});
+
+// --- Suppliers ---
+app.get('/api/suppliers', isAuthenticated, authorizeRoles(['Manager', 'Staff']), (req, res) => {
+    db.all(`SELECT * FROM Suppliers ORDER BY supplier_name`, [], (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(rows);
+    });
+});
+
+app.post('/api/suppliers', isAuthenticated, authorizeRoles(['Manager', 'Staff']), (req, res) => {
+    const { supplier_name } = req.body;
+    if (!supplier_name || supplier_name.trim() === '')
+        return res.status(400).json({ error: 'กรุณาระบุชื่อซัพพลายเออร์' });
+
+    db.get(`SELECT supplier_id FROM Suppliers WHERE supplier_name = ?`, [supplier_name.trim()], (err, row) => {
+        if (err) return res.status(500).json({ error: err.message });
+        if (row) return res.status(409).json({ error: 'ซัพพลายเออร์นี้มีอยู่ในระบบแล้ว' });
+
+        db.run(`INSERT INTO Suppliers (supplier_name) VALUES (?)`, [supplier_name.trim()], function(err) {
+            if (err) return res.status(500).json({ error: err.message });
+            const newSupplier = { supplier_id: this.lastID, supplier_name: supplier_name.trim() };
+            app.locals.suppliers = [...(app.locals.suppliers || []), newSupplier]
+                .sort((a, b) => a.supplier_name.localeCompare(b.supplier_name));
+            res.status(201).json(newSupplier);
+        });
+    });
+});
+
+app.delete('/api/suppliers/:id', isAuthenticated, authorizeRoles(['Manager']), (req, res) => {
+    db.run(`DELETE FROM Suppliers WHERE supplier_id = ?`, [req.params.id], function(err) {
+        if (err) return res.status(500).json({ error: err.message });
+        if (this.changes === 0) return res.status(404).json({ error: 'ไม่พบซัพพลายเออร์นี้' });
+        app.locals.suppliers = (app.locals.suppliers || []).filter(s => s.supplier_id != req.params.id);
+        res.json({ success: true });
     });
 });
 // ==========================================

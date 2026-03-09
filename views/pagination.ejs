@@ -3,14 +3,14 @@
                         <div class="pagination">
                             <% if (currentPage> 1) { %>
                                 <button href="#" class="page-btn" data-page="1"
-                                    onclick="changePage(this, '<%= ejsName %>');">&laquo;</button>
+                                    onclick="changePage(this, '<%= ejsName %>', '<%= branchId %>');">&laquo;</button>
                                 <% } else { %>
                                     <span class="disabled">&laquo;</span>
                                     <% } %>
 
                                         <% if (currentPage> 1) { %>
                                             <button href="#" class="page-btn" data-page="<%= currentPage - 1 %>"
-                                                onclick="changePage(this, '<%= ejsName %>');">&lsaquo;</button>
+                                                onclick="changePage(this, '<%= ejsName %>', '<%= branchId %>');">&lsaquo;</button>
                                             <% } else { %>
                                                 <span class="disabled">&lsaquo;</span>
                                                 <% } %>
@@ -22,7 +22,7 @@
                                                     <% if (currentPage < totalPages) { %>
                                                         <button href="#" class="page-btn"
                                                             data-page="<%= currentPage + 1 %>"
-                                                            onclick="changePage(this, '<%= ejsName %>');">&rsaquo;</button>
+                                                            onclick="changePage(this, '<%= ejsName %>', '<%= branchId %>');">&rsaquo;</button>
                                                         <% } else { %>
                                                             <span class="disabled">&rsaquo;</span>
                                                             <% } %>
@@ -30,7 +30,7 @@
                                                                 <% if (currentPage < totalPages) { %>
                                                                     <button href="#" class="page-btn"
                                                                         data-page="<%= totalPages %>"
-                                                                        onclick="changePage(this, '<%= ejsName %>');">&raquo;</button>
+                                                                        onclick="changePage(this, '<%= ejsName %>', '<%= branchId %>');">&raquo;</button>
                                                                     <% } else { %>
                                                                         <span class="disabled">&raquo;</span>
                                                                         <% } %>

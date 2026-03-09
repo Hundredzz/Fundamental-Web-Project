@@ -104,9 +104,9 @@ input, select{
 }
 
 .form-group label {
-    width: 115px;
-    font-weight: 500;
-    font-size: 1.1rem;
+    width: 130px;       /* was 115px — gives room for "ประเภทสินค้า" and "ซัพพลายเออร์" */
+    min-width: 130px;   /* prevents shrinking in flex */
+    white-space: nowrap;
     text-align: right;
     padding-right: 0.5%;
 }
@@ -129,15 +129,23 @@ input, select{
     justify-content: center;
     margin-top: 25px;
     position: absolute;
-    bottom: -40px;
+    bottom: -25px;
     /* Overlaps the bottom edge like in the image */
     left: 0;
     width: 100%;
 }
 
+.submit-btn-container button{
+    width: 25%;
+}
+
 .submit-btn {
     background-color: #009922 !important; 
+    color: white;
     background: none;
+}
+select{
+    width: 100%;
 }
 
 
