@@ -1,202 +1,238 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <%- include('head') %>
-    <title>แก้ไขผู้ใช้งาน</title>
-    <link rel="stylesheet" href="/css/table.css">
-    <link rel="stylesheet" href="/css/button.css">
-    <link rel="stylesheet" href="/css/search.css">
-    <link rel="stylesheet" href="/css/errorBox.css">
-    <style>
-        body {
-            margin: 0;
-            padding: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-        }
-        .main-content{
-            margin-top: 0;
-        }
-        .content {
-            padding: 40px;
-            width: 50%;
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
+        <title>แก้ไขผู้ใช้งาน</title>
+        <link rel="stylesheet" href="/css/table.css">
+        <link rel="stylesheet" href="/css/button.css">
+        <link rel="stylesheet" href="/css/search.css">
+        <link rel="stylesheet" href="/css/errorBox.css">
+        <style>
+            body {
+                margin: 0;
+                padding: 0;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                height: 100vh;
+            }
 
-        h1 {
-            margin: 0;
-            color: #75162D;
-            align-self: center;
-        }
-        .row-group {
-            display: flex;
-            gap: 15px;
-            width: 100%;
-        }
+            .main-content {
+                margin-top: 0;
+            }
 
-        .input-1 { 
-            flex: 1; 
-            box-sizing: border-box;
-        } 
-        .input-2 { 
-            flex: 2; 
-            box-sizing: border-box;
-        }
-        .full-width {
-            width: 98%; 
-            box-sizing: border-box;
-        }
+            .content {
+                padding: 40px;
+                width: 50%;
+                display: flex;
+                flex-direction: column;
+                gap: 20px;
+            }
 
-        .button-group {
-            display: flex;
-            gap: 15px;
-            margin-top: 10px;
-        }
-        .bt-popup-no {
-            background: #FFFFFF;
-            color: #75162D;
-            border: 2px solid #75162D;
-            width: 100%;
-        }
-        .bt-popup-yes {
-            background: #75162D;
-            color: #F2D9A0;
-            border: none;
-            width: 100%;
-        }
+            h1 {
+                margin: 0;
+                color: #75162D;
+                align-self: center;
+            }
 
-        input[readonly]{
-            cursor:not-allowed;
-        }
-        
-        
-    </style>
+            .row-group {
+                display: flex;
+                gap: 15px;
+                width: 100%;
+            }
+
+            .input-1 {
+                flex: 1;
+                box-sizing: border-box;
+            }
+
+            .input-2 {
+                flex: 2;
+                box-sizing: border-box;
+            }
+
+            .full-width {
+                width: 98%;
+                box-sizing: border-box;
+            }
+
+            .button-group {
+                display: flex;
+                gap: 15px;
+                margin-top: 10px;
+            }
+
+            .bt-popup-no {
+                background: #FFFFFF;
+                color: #75162D;
+                border: 2px solid #75162D;
+                width: 100%;
+            }
+
+            .bt-popup-yes {
+                background: #75162D;
+                color: #F2D9A0;
+                border: none;
+                width: 100%;
+            }
+
+            input[readonly] {
+                cursor: not-allowed;
+            }
+
+            @media screen and (max-width: 768px) {
+                .row-group {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 15px;
+                    width: 100%;
+                    box-sizing: border-box;
+                }
+
+                input {
+                    width: 100%;
+                }
+
+                .content {
+                    padding: 0px;
+                    width: 90%;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 20px;
+                }
+
+            }
+        </style>
 </head>
+
 <body>
     <%- include('nav') %>
-    <form action="<%= path %>" method="POST" class="content main-content" id="main-content">
-        <h1><%= title %></h1>
-        <span id="empLookupMsg" style="font-size:0.78rem; min-height:1.1em;"></span>
-        <div class="row-group">
-                    <input type="text" id="employeeIdInput" class="input-1" name="employeeId" placeholder="รหัสพนักงาน" 
-                           value="<%= user ? user.employee_id : '' %>" 
-                           <%= user ? 'readonly' : 'required' %>>
-            
-                   
-            <input type="text" class="input-2" name="userName" placeholder="ชื่อผู้ใช้" 
-                   value="<%= user ? user.username : '' %>">
-        </div>
-        
-        <input type="password" name="password" class="full-width" 
-               placeholder="<%= user ? 'รหัสผ่านใหม่ (เว้นว่างไว้ถ้าไม่ต้องการเปลี่ยน)' : 'รหัสผ่าน' %>" 
-               <%= user ? '' : 'required' %>>
-        <input type="password" name="cPassword" class="full-width" 
-               placeholder="<%= user ? 'ยืนยันรหัสผ่านใหม่ (เว้นว่างไว้ถ้าไม่ต้องการเปลี่ยน)' : 'ยืนยันรหัสผ่าน' %>" 
-               <%= user ? '' : 'required' %>>
-               
-        <div class="row-group">
-            <input type="text" name="fname" class="input-1" placeholder="ชื่อ" 
-                   value="<%= user ? user.first_name : '' %>" <%= user ? 'readonly' : 'required' %> required>
-                   
-            <input type="text" name="lname" class="input-1" placeholder="นามสกุล" 
-                   value="<%= user ? user.last_name : '' %>" <%= user ? 'readonly' : 'required' %> required>
-        </div>
-        
-        <input type="email" name="email" class="full-width" placeholder="อีเมล (ไม่บังคับ)" 
-               value="<%= user ? user.email : '' %>">
-               
-        <div class="row-group">
-            <input type="text" class="input-1" name="phone" placeholder="เบอร์โทร (ไม่บังคับ)" 
-                   value="<%= user ? user.phone : '' %>">
-                   
-            <select class="input-1" name="role" required>
-                <option value="" disabled <%= !user ? 'selected' : '' %>>เลือกบทบาท</option>
-                <option value="Manager" <%= user && user.role === 'Manager' ? 'selected' : '' %>>ผู้จัดการ</option>
-                <option value="Staff" <%= user && user.role === 'Staff' ? 'selected' : '' %>>เจ้าหน้าที่คลัง</option>
-                <option value="StaffBranch" <%= user && user.role === 'StaffBranch' ? 'selected' : '' %>>เจ้าหน้าที่สาขา</option>
-            </select>
-        </div>
+        <form action="<%= path %>" method="POST" class="content main-content" id="main-content">
+            <h1>
+                <%= title %>
+            </h1>
+            <span id="empLookupMsg" style="font-size:0.78rem; min-height:1.1em;"></span>
+            <div class="row-group">
+                <input type="text" id="employeeIdInput" class="input-1" name="employeeId" placeholder="รหัสพนักงาน"
+                    value="<%= user ? user.employee_id : '' %>" <%=user ? 'readonly' : 'required' %>>
 
-        <% if (typeof error !== 'undefined' && error) { %>
-        <div class="error-box">
-            <span>⚠️</span>
-            <span><%= error %></span>
-        </div>
-        <% } %>
-        
-        <div class="button-group">
-            <button class="bt-popup-no style-button" type="button" onclick="window.location.href = '/manage'">ยกเลิก</button>
-            <button class="bt-popup-yes style-button" type="submit">บันทึกข้อมูล</button>
-        </div>
 
-        
-        
-    </form>
-    <% if (!user) { %>
-    <script>
-        const empInput = document.getElementById('employeeIdInput');
-        const msgEl = document.getElementById('empLookupMsg');
-        const fnameEl = document.querySelector('input[name="fname"]');
-        const lnameEl = document.querySelector('input[name="lname"]');
-        const emailEl = document.querySelector('input[name="email"]');
-        const phoneEl = document.querySelector('input[name="phone"]');
+                <input type="text" class="input-2" name="userName" placeholder="ชื่อผู้ใช้"
+                    value="<%= user ? user.username : '' %>">
+            </div>
 
-        let debounceTimer;
+            <input type="password" name="password" class="full-width"
+                placeholder="<%= user ? 'รหัสผ่านใหม่ (เว้นว่างไว้ถ้าไม่ต้องการเปลี่ยน)' : 'รหัสผ่าน' %>" <%=user ? ''
+                : 'required' %>>
+            <input type="password" name="cPassword" class="full-width"
+                placeholder="<%= user ? 'ยืนยันรหัสผ่านใหม่ (เว้นว่างไว้ถ้าไม่ต้องการเปลี่ยน)' : 'ยืนยันรหัสผ่าน' %>"
+                <%=user ? '' : 'required' %>>
 
-        function setFieldsReadonly(readonly) {
-            [fnameEl, lnameEl, emailEl, phoneEl].forEach(el => {
-                if (readonly) {
-                    el.setAttribute('readonly', true);
-                    el.style.cursor = 'not-allowed';
-                } else {
-                    el.removeAttribute('readonly');
-                    el.style.cursor = '';
+            <div class="row-group">
+                <input type="text" name="fname" class="input-1" placeholder="ชื่อ"
+                    value="<%= user ? user.first_name : '' %>" <%=user ? 'readonly' : 'required' %> required>
+
+                <input type="text" name="lname" class="input-1" placeholder="นามสกุล"
+                    value="<%= user ? user.last_name : '' %>" <%=user ? 'readonly' : 'required' %> required>
+            </div>
+
+            <input type="email" name="email" class="full-width" placeholder="อีเมล (ไม่บังคับ)"
+                value="<%= user ? user.email : '' %>">
+
+            <div class="row-group">
+                <input type="text" class="input-1" name="phone" placeholder="เบอร์โทร (ไม่บังคับ)"
+                    value="<%= user ? user.phone : '' %>">
+
+                <select class="input-1" name="role" required>
+                    <option value="" disabled <%=!user ? 'selected' : '' %>>เลือกบทบาท</option>
+                    <option value="Manager" <%=user && user.role==='Manager' ? 'selected' : '' %>>ผู้จัดการ</option>
+                    <option value="Staff" <%=user && user.role==='Staff' ? 'selected' : '' %>>เจ้าหน้าที่คลัง</option>
+                    <option value="StaffBranch" <%=user && user.role==='StaffBranch' ? 'selected' : '' %>
+                        >เจ้าหน้าที่สาขา</option>
+                </select>
+            </div>
+
+            <% if (typeof error !=='undefined' && error) { %>
+                <div class="error-box">
+                    <span>⚠️</span>
+                    <span>
+                        <%= error %>
+                    </span>
+                </div>
+                <% } %>
+
+                    <div class="button-group">
+                        <button class="bt-popup-no style-button" type="button"
+                            onclick="window.location.href = '/manage'">ยกเลิก</button>
+                        <button class="bt-popup-yes style-button" type="submit">บันทึกข้อมูล</button>
+                    </div>
+
+
+
+        </form>
+        <% if (!user) { %>
+            <script>
+                const empInput = document.getElementById('employeeIdInput');
+                const msgEl = document.getElementById('empLookupMsg');
+                const fnameEl = document.querySelector('input[name="fname"]');
+                const lnameEl = document.querySelector('input[name="lname"]');
+                const emailEl = document.querySelector('input[name="email"]');
+                const phoneEl = document.querySelector('input[name="phone"]');
+
+                let debounceTimer;
+
+                function setFieldsReadonly(readonly) {
+                    [fnameEl, lnameEl, emailEl, phoneEl].forEach(el => {
+                        if (readonly) {
+                            el.setAttribute('readonly', true);
+                            el.style.cursor = 'not-allowed';
+                        } else {
+                            el.removeAttribute('readonly');
+                            el.style.cursor = '';
+                        }
+                    });
                 }
-            });
-        }
 
-        function clearAutoFill() {
-            fnameEl.value = '';
-            lnameEl.value = '';
-            emailEl.value = '';
-            phoneEl.value = '';
-            setFieldsReadonly(false);
-            msgEl.style.color = '';
-            msgEl.textContent = '';
-        }
-
-        empInput.addEventListener('input', () => {
-            clearTimeout(debounceTimer);
-            const val = empInput.value.trim();
-            if (!val) { clearAutoFill(); return; }
-
-            debounceTimer = setTimeout(async () => {
-                try {
-                    const res = await fetch(`/api/employee/${encodeURIComponent(val)}`);
-                    if (res.ok) {
-                        const emp = await res.json();
-                        fnameEl.value = emp.first_name || '';
-                        lnameEl.value = emp.last_name || '';
-                        emailEl.value = emp.email || '';
-                        phoneEl.value = emp.phone || '';
-                        setFieldsReadonly(true);
-                        msgEl.style.color = '#16a34a';
-                        msgEl.textContent = `✔ พบพนักงาน: ${emp.first_name} ${emp.last_name}`;
-                    } else {
-                        clearAutoFill();
-                        msgEl.style.color = '#64748b';
-                        msgEl.textContent = 'รหัสนี้ยังไม่มีในระบบ — กรอกข้อมูลพนักงานใหม่ได้เลย';
-                    }
-                } catch (e) {
-                    clearAutoFill();
+                function clearAutoFill() {
+                    fnameEl.value = '';
+                    lnameEl.value = '';
+                    emailEl.value = '';
+                    phoneEl.value = '';
+                    setFieldsReadonly(false);
+                    msgEl.style.color = '';
+                    msgEl.textContent = '';
                 }
-            }, 400);
-        });
-    </script>
-    <% } %>
+
+                empInput.addEventListener('input', () => {
+                    clearTimeout(debounceTimer);
+                    const val = empInput.value.trim();
+                    if (!val) { clearAutoFill(); return; }
+
+                    debounceTimer = setTimeout(async () => {
+                        try {
+                            const res = await fetch(`/api/employee/${encodeURIComponent(val)}`);
+                            if (res.ok) {
+                                const emp = await res.json();
+                                fnameEl.value = emp.first_name || '';
+                                lnameEl.value = emp.last_name || '';
+                                emailEl.value = emp.email || '';
+                                phoneEl.value = emp.phone || '';
+                                setFieldsReadonly(true);
+                                msgEl.style.color = '#16a34a';
+                                msgEl.textContent = `✔ พบพนักงาน: ${emp.first_name} ${emp.last_name}`;
+                            } else {
+                                clearAutoFill();
+                                msgEl.style.color = '#64748b';
+                                msgEl.textContent = 'รหัสนี้ยังไม่มีในระบบ — กรอกข้อมูลพนักงานใหม่ได้เลย';
+                            }
+                        } catch (e) {
+                            clearAutoFill();
+                        }
+                    }, 400);
+                });
+            </script>
+            <% } %>
 </body>
+
 </html>

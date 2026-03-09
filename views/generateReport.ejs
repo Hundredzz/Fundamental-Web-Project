@@ -20,6 +20,54 @@
             .hidden {
                 display: none !important;
             }
+            @media screen and (max-width: 768px) {
+                .brand-side {
+                    flex: 0;
+                }
+
+                .container {
+                    flex-wrap: wrap;
+                    justify-content: left;
+                    align-items: flex-start;
+                    width: 90%;
+                    padding: 1%;
+                    gap: 10px;
+                    box-sizing: border-box;
+                    position: relative;
+                }
+
+                body {
+                    flex-direction: column;
+                    overflow-y: auto;
+                }
+                .main-content {
+                    max-height: none;
+                    height: auto;
+                    width: 100%;
+                    margin-left: 0;
+                    padding: 20px 10px;
+                    justify-content: flex-start;
+                }
+                .container {
+                    flex-direction: column;
+                    width: 95%;
+                    align-items: stretch;
+                    gap: 5px;
+                }
+                input,
+                select,
+                .style-button {
+                    position:relative;
+                    width: 100% !important;
+                    margin: 5px 0;
+                    box-sizing: border-box;
+                    top: -10;
+                    right: 0;
+                }
+                .table-scroll-container {
+                    width: 95%;
+                }
+            }
 
         </style>
 </head>

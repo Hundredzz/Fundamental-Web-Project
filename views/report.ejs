@@ -51,6 +51,24 @@
             box-shadow: 0 0px 10px #3B010B;
             transform: translateY(1px) scale(0.98);
         }
+        @media screen and (max-width: 768px) {
+                .main-content {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 15px;
+                    width: 100%;
+                    box-sizing: border-box;
+                    
+                }
+                h1{
+                    font-size: 2rem;
+                }
+
+                .report-button {
+                    width: 100%;
+                    padding-block: 5%;
+                }
+            }
     </style>
     
 </head>

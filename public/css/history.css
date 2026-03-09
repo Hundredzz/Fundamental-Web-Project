@@ -51,7 +51,8 @@ select {
 .search-container {
     flex: 1;
 }
-.main-content{
+
+.main-content {
     margin-top: 40px;
 }
 
@@ -59,13 +60,6 @@ select {
     .brand-side {
         flex: 0;
     }
-
-    .search-container{
-        margin-bottom: 5px;
-        font-size: 14px;
-        white-space: nowrap;
-    }
-    
 
     .container {
         flex-wrap: wrap;
@@ -78,8 +72,45 @@ select {
         position: relative;
     }
 
-    .table-scroll-container {
-        width: 90%;
+    body {
+        flex-direction: column !important;
+        overflow-y: auto;
     }
 
+    .main-content {
+        max-height: none;
+        height: auto;
+        width: 100% !important;
+        margin-left: 0 !important;
+        padding: 20px 10px;
+        justify-content: flex-start;
+    }
+
+    .container {
+        flex-direction: column;
+        width: 95%;
+        align-items: stretch;
+        gap: 5px;
+    }
+
+    h1 {
+        font-size: 1.5rem;
+    }
+
+    input,
+    select,
+    .style-button {
+        width: 100% !important;
+        margin: 5px 0;
+        box-sizing: border-box;
+    }
+
+    .add-user-btn {
+        top: -10;
+        right: 0;
+    }
+
+    .table-scroll-container {
+        width: 95%;
+    }
 }
