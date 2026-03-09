@@ -1,51 +1,82 @@
-.main-content{
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-        }
-        .container {
-            display: flex;
-            flex-direction: row;
-            flex-wrap: wrap;
-            justify-content: space-around;
-            align-items: center;
-            background-color: #75162D;
-            width: 80%;
-            padding-block: 1%;
-            padding-inline: 2%;
-            box-sizing: border-box;
-            gap: 2%;
-        }
-        h1 {
-            text-align: center;
-            color: #75162D;
-        }
+.main-content {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
 
-        @media screen and (max-width: 800px) {
-            .brand-side {
-                flex: 0;
-            }
-        }
-        .material-symbols-outlined {
-            font-variation-settings:
-                'FILL' 0,
-                'wght' 400,
-                'GRAD' 0,
-                'opsz' 24
-        }
-        .search-icon {
-            font-size: 20px;
-            margin-right: 1%;
-        }
-        p{
-            color: white;
-            margin: 5px;
-        }
-        input, select{
-            width: 100%;
-            box-sizing: border-box;
-        }
-        .search-container{
-            flex: 1;
-        }
+.container {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: space-around;
+    align-items: center;
+    background-color: #75162D;
+    width: 80%;
+    padding-block: 1%;
+    padding-inline: 2%;
+    box-sizing: border-box;
+    gap: 2%;
+}
+
+h1 {
+    text-align: center;
+    color: #75162D;
+}
+
+.material-symbols-outlined {
+    font-variation-settings:
+        'FILL' 0,
+        'wght' 400,
+        'GRAD' 0,
+        'opsz' 24
+}
+
+.search-icon {
+    font-size: 20px;
+    margin-right: 1%;
+}
+
+p {
+    color: white;
+    margin: 5px;
+}
+
+input,
+select {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.search-container {
+    flex: 1;
+}
+
+@media screen and (max-width: 768px) {
+    .brand-side {
+        flex: 0;
+    }
+
+    .search-container{
+        margin-bottom: 5px;
+        font-size: 14px;
+        white-space: nowrap;
+    }
+    
+
+    .container {
+        flex-wrap: wrap;
+        justify-content: left;
+        align-items: flex-start;
+        width: 90%;
+        padding: 1%;
+        gap: 10px;
+        box-sizing: border-box;
+        position: relative;
+    }
+
+    .table-scroll-container {
+        width: 90%;
+    }
+
+}
