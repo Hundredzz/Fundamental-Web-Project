@@ -16,19 +16,21 @@
                     ผู้จัดการ
                 <%} else if (user.role === "Staff"){%>
                     เจ้าหน้าที่คลัง
+                <%} else if (user.role === "StaffBranch"){%>
+                    เจ้าหน้าที่สาขา
                 <%}%>
             </td>
             <td>
                 <img src="/img/edit-icon.svg" id="editData-<%= user.username %>" onclick="window.location.href='/edit-user/<%= user.user_id %>'" class="icon">
                 <img src="/img/delete-icon.svg" id="deleteData-<%= user.username %>"
-                    onclick="showDetail('คุณแน่ใจหรือไม่ว่าต้องการลบผู้ใช้', '<%= user.username %>', '/delete-user/<%= user.user_id %>')"
+                    onclick="confirmDetail('คุณแน่ใจหรือไม่ว่าต้องการลบผู้ใช้', '<%= user.username %>', '/delete-user/<%= user.user_id %>')"
                     class="icon">
                 <% if (user.status === 'Inactive'){ %>
                 <img src="/img/ban.svg" class="icon"
-                    onclick="showDetail('คุณแน่ใจหรือไม่ว่าต้องการปลดระงับผู้ใช้', '<%= user.username %>', '/toggle-ban/<%= user.user_id %>/<%=user.status%>')">
+                    onclick="confirmDetail('คุณแน่ใจหรือไม่ว่าต้องการปลดระงับผู้ใช้', '<%= user.username %>', '/toggle-ban/<%= user.user_id %>/<%=user.status%>')">
                 <%} else {%>
                     <img src="/img/notban-icon.svg" class="icon"
-                    onclick="showDetail('คุณแน่ใจหรือไม่ว่าต้องการระงับผู้ใช้', '<%= user.username %>', '/toggle-ban/<%= user.user_id %>/<%=user.status%>')">
+                    onclick="confirmDetail('คุณแน่ใจหรือไม่ว่าต้องการระงับผู้ใช้', '<%= user.username %>', '/toggle-ban/<%= user.user_id %>/<%=user.status%>')">
                     <%}%>
                 </td>
         </tr>

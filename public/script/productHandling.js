@@ -29,6 +29,7 @@ function changePage(btnElement, ejsName) {
         .then(response => response.json())
         .then(data => {
             productSection.innerHTML = data.html;
+            JsBarcode(".barcode").init();
             window.scrollTo({
                 top: 0
             });

@@ -2,7 +2,7 @@ const popup = document.getElementById('confirmPopup');
 const closeBtn = document.getElementById('closePopupBtn');
 
 
-function showDetail(title, data, path) {
+function confirmDetail(title, data, path) {
 
     popup.innerHTML = `
         <div class="popup-content">

@@ -34,7 +34,7 @@
                         <button type="submit"><img src="/img/edit-icon.svg" alt=""></button>
                     </form>
                     <form action="">
-                        <button type="button" onclick="deleteProduct('<%= product.product_id %>')">
+                        <button type="button" onclick="confirmDetail('คุณแน่ใจหรือไม่ว่าต้องลบสินค้า', '<%= product.product_name %>', '<%= product.product_id %>')">
         <img src="/img/delete-icon.svg" alt="Delete">
     </button>
                     </form> 
@@ -52,8 +52,3 @@
                             <% } %>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
-
-<script>
-    JsBarcode(".barcode").init();
-</script>

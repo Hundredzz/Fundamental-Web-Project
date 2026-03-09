@@ -51,6 +51,9 @@ select {
 .search-container {
     flex: 1;
 }
+.main-content{
+    margin-top: 40px;
+}
 
 @media screen and (max-width: 768px) {
     .brand-side {

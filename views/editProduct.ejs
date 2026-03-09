@@ -4,6 +4,7 @@
 <head>
     <title>Product</title>
     <link rel="stylesheet" href="/css/search.css">
+    <link rel="stylesheet" href="/css/button.css">
     <link rel="stylesheet" href="/css/editProduct.css">
     <%- include('head') %>
 </head>
@@ -18,18 +19,31 @@
             <form action="<%= url_path %>" method="POST" class="content-layout" enctype="multipart/form-data">
                 <div class="image-placeholder">
                     <label for="product-image" id="image-upload-label">
-                        <div id="upload-content-placeholder">
-                            <span id="upload-icon">📷</span>
-                            คลิกเพื่ออัปโหลดรูปภาพ
-                        </div>
-                        <img id="image-preview" src="#" alt="ตัวอย่างรูปภาพ" style="display: none;" />
+
+                        <% if (product && product.img_path) { %>
+                            <div id="upload-content-placeholder">
+                                <span id="upload-icon">📷</span>
+                                คลิกเพื่ออัปโหลดรูปภาพ
+                            </div>
+                            <img id="image-preview" src="/img/product_image/<%= product.img_path %>" alt="ตัวอย่างรูปภาพ"
+                                style="display: block;" />
+
+                            <% } else { %>
+                                <div id="upload-content-placeholder" style="display: block;">
+                                    <span id="upload-icon">📷</span>
+                                    คลิกเพื่ออัปโหลดรูปภาพ
+                                </div>
+                                <img id="image-preview" src="#" alt="ตัวอย่างรูปภาพ" style="display: none;" />
+                                <% } %>
+
                     </label>
-                    <input type="file" id="product-image" name="product_image" accept="image/*" style="display: none;" />
+                    <input type="file" id="product-image" name="product_image" accept="image/*"
+                        style="display: none;" />
                 </div>
                 <div class="form-card">
 
 
-                    <input type="hidden" name="image_path" id="final-image-path">
+                    <input type="hidden" name="image_pt" id="final-image-path">
 
                     <div class="form-group">
                         <label for="code">รหัสสินค้า :</label>
@@ -76,7 +90,8 @@
                     </div>
                     <div class="form-group">
                         <label for="net_content">ปริมาณสุทธิ :</label>
-                        <input type="text" id="net_content" name="net_content" value="<%= product.net_content %>" required>
+                        <input type="text" id="net_content" name="net_content" value="<%= product.net_content %>"
+                            required>
                     </div>
                     <div class="form-group">
                         <label for="cost_price">ราคาทุน :</label>
@@ -93,15 +108,16 @@
                         <input type="text" id="fda_no" name="fda_no" value="<%= product.fda_number %>">
                     </div>
 
-                    <div class="submit-btn-container">
-                        <button type="button" class="cancle-btn" onclick="window.location.href='/product'">ยกเลิก</button>
-                        <button type="submit" class="submit-btn">บันทึก</button>
-                    </div>
+                    
 
                 </div>
             </form>
 
-
+<div class="submit-btn-container">
+                        <button type="button"
+                            onclick="window.location.href='/product'" class="style-button">ยกเลิก</button>
+                        <button type="submit" class="style-button submit-btn">บันทึก</button>
+                    </div>
         </div>
 
         <script>
@@ -120,9 +136,9 @@
                             return;
                         }
 
-                        // Just show the preview! No background uploading needed anymore.
                         const reader = new FileReader();
                         reader.onload = function (e) {
+                            // Update the preview to the new file
                             imagePreview.src = e.target.result;
                             imagePreview.style.display = 'block';
                             placeholderContent.style.display = 'none';

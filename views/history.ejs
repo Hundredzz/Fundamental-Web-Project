@@ -24,8 +24,12 @@
                     <input type="text" name="productName" id="productName" placeholder="ชื่อหรือรหัสสินค้า">
                 </div>
                 <div class="search-container">
-                    <p>วันที่ทำรายการ :</p>
-                    <input type="date" name="data" id="date">
+                    <p>ตั้งแต่วันที่ :</p>
+                    <input type="date" name="start_date" id="date">
+                </div>
+                <div class="search-container">
+                    <p>ถึงวันที่ :</p>
+                    <input type="date" name="end_date" id="date">
                 </div>
                 <div class="search-container">
                     <p>ประเภทรายการ :</p>
@@ -46,11 +50,10 @@
                 <table>
                     <thead>
                         <tr>
-                            <th>รหัสรายการ</th>
-                            <th>ชื่อสินค้า</th>
-                            <th>จำนวน</th>
                             <th>วันที่</th>
+                            <th>ชื่อสินค้า</th>
                             <th>ประเภทรายการ</th>
+                            <th>จำนวน</th>
                             <th>ผู้ทำรายการ</th>
                         </tr>
                     </thead>
