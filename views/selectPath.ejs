@@ -76,9 +76,10 @@
 <body>
 <%- include('nav') %>
     <div class="main-content" id="main-content">
-        <h1>สร้างรายงาน</h1>
-        <button onclick="window.location.href = '/receiveForm/<%=data%>'" class="report-button">รับสินค้า</button>
-        <button onclick="window.location.href = '/withdraw-scan/<%=data%>'" class="report-button">เบิกสินค้า</button>
+        <% if ( user.role=='Staff' ) { %>
+        <button onclick="window.location.href = '/receiveForm/<%=data%>'" class="report-button">เพิ่มสินค้าเข้าคลัง</button>
+        <% } %>
+        <button onclick="window.location.href = '/withdraw-scan/<%=data%>'" class="report-button">เบิกสินค้าออกคลัง</button>
     </div>
 </body>
 

@@ -603,53 +603,54 @@ app.get("/add-user", isAuthenticated, authorizeRoles(["Manager"]), (req, res) =>
         db_error: "เกิดข้อผิดพลาดในฐานข้อมูล กรุณาลองใหม่อีกครั้ง",
         duplicate_employee: "รหัสพนักงานนี้มีบัญชีอยู่ในระบบแล้ว กรุณาใช้รหัสอื่น",
         password_error: "รหัสผ่านไม่ถูกต้องกรุณาลองใหม่อีกครั้ง",
+        no_employee: "ไม่พบพนักงานที่เลือก กรุณาลองใหม่อีกครั้ง",
     };
     const error = errorMap[req.query.error] || null;
-    res.render("manageEdit", { user: null, title: 'เพิ่มผู้ใช้', path: '/add-user-data', error });
+    // Fetch employees who do not yet have a user account
+    const sql = `
+        SELECT e.employee_id, e.first_name, e.last_name
+        FROM Employees e
+        WHERE e.employee_id NOT IN (SELECT employee_id FROM Users WHERE employee_id IS NOT NULL)
+        ORDER BY e.employee_id ASC
+    `;
+    db.all(sql, [], (err, employees) => {
+        if (err) return res.status(500).send("เกิดข้อผิดพลาดในการดึงข้อมูลพนักงาน");
+        res.render("manageEdit", { user: null, title: 'เพิ่มผู้ใช้', path: '/add-user-data', error, employees });
+    });
 });
 
 app.post("/add-user-data", isAuthenticated, authorizeRoles(["Manager"]), (req, res) => {
-    const { employeeId, userName, password, cPassword, fname, lname, email, phone, role } = req.body;
+    const { employeeId, userName, password, cPassword, role } = req.body;
     const status = "Active";
-    const salt = crypto.randomBytes(16).toString("hex");
-    if (cPassword.trim() != '' && cPassword.trim() === password.trim()) {
-        crypto.scrypt(password.trim(), salt, 64, (err, derivedKey) => {
-            if (err) return res.redirect("/add-user?error=db_error");
-            const hash = derivedKey.toString("hex");
-            const passwordToSave = `${salt}:${hash}`;
-            db.get(`SELECT employee_id FROM Employees WHERE employee_id = ?`, [employeeId], (err, row) => {
-                if (err) return res.redirect("/add-user?error=db_error");
-                if (row) {
-                    return res.redirect("/add-user?error=duplicate_employee");
-                } else {
-                    db.serialize(() => {
-                        const empSql = `INSERT INTO Employees (employee_id, first_name, last_name, email, phone) VALUES (?, ?, ?, ?, ?)`;
-                        db.run(empSql, [employeeId, fname, lname, email, phone], function (empErr) {
-                            if (empErr) {
-                                if (empErr.message.includes("UNIQUE constraint failed: Employees.employee_id")) {
-                                    return res.redirect("/add-user?error=duplicate_employee");
-                                }
-                                return res.redirect("/add-user?error=db_error");
-                            }
-                            const userSql = `INSERT INTO Users (username, password, role, employee_id, status) VALUES (?, ?, ?, ?, ?)`;
-                            db.run(userSql, [userName, passwordToSave, role, employeeId, status], function (userErr) {
-                                if (userErr) {
-                                    if (userErr.message.includes("UNIQUE constraint failed: Users.employee_id")) {
-                                        return res.redirect("/add-user?error=duplicate_employee");
-                                    }
-                                    return res.redirect("/add-user?error=duplicate_username");
-                                }
-                                res.redirect("/manage");
-                            });
-                        });
-                    });
-                }
-            });
-        });
-    }
-    else {
+    if (!cPassword || !password || cPassword.trim() !== password.trim() || password.trim() === '') {
         return res.redirect("/add-user?error=password_error");
     }
+    // Verify the selected employee exists in the Employees table
+    db.get(`SELECT employee_id FROM Employees WHERE employee_id = ?`, [employeeId], (err, empRow) => {
+        if (err) return res.redirect("/add-user?error=db_error");
+        if (!empRow) return res.redirect("/add-user?error=no_employee");
+        // Check the employee does not already have a user account
+        db.get(`SELECT user_id FROM Users WHERE employee_id = ?`, [employeeId], (err, existingUser) => {
+            if (err) return res.redirect("/add-user?error=db_error");
+            if (existingUser) return res.redirect("/add-user?error=duplicate_employee");
+            const salt = crypto.randomBytes(16).toString("hex");
+            crypto.scrypt(password.trim(), salt, 64, (err, derivedKey) => {
+                if (err) return res.redirect("/add-user?error=db_error");
+                const hash = derivedKey.toString("hex");
+                const passwordToSave = `${salt}:${hash}`;
+                const userSql = `INSERT INTO Users (username, password, role, employee_id, status) VALUES (?, ?, ?, ?, ?)`;
+                db.run(userSql, [userName, passwordToSave, role, employeeId, status], function (userErr) {
+                    if (userErr) {
+                        if (userErr.message.includes("UNIQUE constraint failed: Users.employee_id")) {
+                            return res.redirect("/add-user?error=duplicate_employee");
+                        }
+                        return res.redirect("/add-user?error=duplicate_username");
+                    }
+                    res.redirect("/manage");
+                });
+            });
+        });
+    });
 });
 
 app.get('/edit-user/:id', isAuthenticated, authorizeRoles(["Manager"]), (req, res) => {
@@ -674,6 +675,7 @@ app.get('/edit-user/:id', isAuthenticated, authorizeRoles(["Manager"]), (req, re
             title: 'แก้ไขผู้ใช้งาน',
             path: `/update-user/${row.user_id}`,
             user: row,
+            employees: [],
             error
         });
     });
@@ -681,30 +683,21 @@ app.get('/edit-user/:id', isAuthenticated, authorizeRoles(["Manager"]), (req, re
 
 app.post('/update-user/:id', isAuthenticated, authorizeRoles(["Manager"]), (req, res) => {
     const targetUserId = req.params.id;
-    const { employeeId, userName, password, cPassword, email, phone, role } = req.body;
+    const { employeeId, userName, password, cPassword, role } = req.body;
     const handleUserUpdate = (passwordToSave) => {
-        const updateEmpSql = `UPDATE Employees SET email = ?, phone = ? WHERE employee_id = ?`;
-        db.run(updateEmpSql, [email, phone, employeeId], function (empErr) {
-            if (empErr) {
-                if (empErr.message.includes("UNIQUE constraint failed: Employees.employee_id")) {
-                    return res.redirect(`/edit-user/${targetUserId}?error=duplicate_employee`);
-                }
-                return res.redirect(`/edit-user/${targetUserId}?error=db_error`);
-            }
-            if (passwordToSave) {
-                const sql = `UPDATE Users SET username = ?, role = ?, password = ? WHERE user_id = ?`;
-                db.run(sql, [userName, role, passwordToSave, targetUserId], function (err) {
-                    if (err) return res.redirect(`/edit-user/${targetUserId}?error=duplicate_username`);
-                    res.redirect('/manage');
-                });
-            } else {
-                const sql = `UPDATE Users SET username = ?, role = ? WHERE user_id = ?`;
-                db.run(sql, [userName, role, targetUserId], function (err) {
-                    if (err) return res.redirect(`/edit-user/${targetUserId}?error=duplicate_username`);
-                    res.redirect('/manage');
-                });
-            }
-        });
+        if (passwordToSave) {
+            const sql = `UPDATE Users SET username = ?, role = ?, password = ? WHERE user_id = ?`;
+            db.run(sql, [userName, role, passwordToSave, targetUserId], function (err) {
+                if (err) return res.redirect(`/edit-user/${targetUserId}?error=duplicate_username`);
+                res.redirect('/manage');
+            });
+        } else {
+            const sql = `UPDATE Users SET username = ?, role = ? WHERE user_id = ?`;
+            db.run(sql, [userName, role, targetUserId], function (err) {
+                if (err) return res.redirect(`/edit-user/${targetUserId}?error=duplicate_username`);
+                res.redirect('/manage');
+            });
+        }
     };
     if (password && password.trim() !== "") {
         if (cPassword.trim() === password.trim()) {
