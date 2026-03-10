@@ -6,6 +6,7 @@
     <link rel="stylesheet" href="/css/search.css">
     <link rel="stylesheet" href="/css/button.css">
     <link rel="stylesheet" href="/css/editProduct.css">
+    <link rel="stylesheet" href="/css/errorBox.css">
     <%- include('head') %>
     <style>
         /* ---- Modal Overlay ---- */
@@ -203,6 +204,12 @@
                     <button type="submit" class="style-button submit-btn">บันทึก</button>
                 </div>
             </form>
+           <% if (typeof error !== 'undefined' && error) { %>
+        <div class="error-box" style="margin-bottom: 15px;">
+            <span>⚠️</span>
+            <span><%= error %></span>
+        </div>
+        <% } %>
         </div>
 
     

@@ -61,8 +61,16 @@ body {
     margin-top: 0px !important; 
     max-width: 1100px;
     border-radius: 4px;
-    padding: 30px 40px;
+    padding: 0px 40px !important;
     position: relative;
+}
+
+h2{
+    margin-top: 0px;
+}
+
+.error-box{
+    margin-top: 25px;
 }
 
 .page-title {
