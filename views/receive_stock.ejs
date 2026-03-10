@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <%- include('head') %>
-    <title>รับสินค้าเข้าคลัง</title>
+    <title>เพิ่มสินค้าเข้าคลัง</title>
         <link rel="stylesheet" href="/css/search.css">
         <link rel="stylesheet" href="/css/button.css">
         <link rel="stylesheet" href="/css/showProduct.css">
@@ -45,7 +45,7 @@
                 </div>
             </div>
             <div id="product-sect">
-                <%- include('productReceive', {ejsName: 'productReceive', data: data, currentPage: currentPage, totalPages: totalPages }) %>
+                <%- include('productReceive', {ejsName: 'productReceive', branchId : branchId, data: data, currentPage: currentPage, totalPages: totalPages }) %>
             </div>
         </div>
         <%- include('productPopup') %>

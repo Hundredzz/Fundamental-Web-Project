@@ -6,6 +6,7 @@
     <link rel="stylesheet" href="/css/search.css">
     <link rel="stylesheet" href="/css/button.css">
     <link rel="stylesheet" href="/css/editProduct.css">
+    <link rel="stylesheet" href="/css/errorBox.css">
     <%- include('head') %>
     <style>
         /* ---- Modal Overlay ---- */
@@ -22,7 +23,7 @@
             display: flex;
         }
         .modal-box {
-            background: #fff;
+            background: #F2E5C5;
             border-radius: 12px;
             padding: 28px 32px;
             width: 100%;
@@ -39,12 +40,11 @@
             margin: 0 0 18px;
             font-size: 1.1rem;
             font-weight: 700;
-            color: #1e293b;
+            color: #75162E;
         }
         .modal-box input[type="text"] {
             width: 100%;
             padding: 10px 12px;
-            border: 1.5px solid #cbd5e1;
             border-radius: 7px;
             font-size: 0.97rem;
             box-sizing: border-box;
@@ -77,9 +77,9 @@
             top: 14px; right: 16px;
             background: none; border: none;
             font-size: 1.3rem; cursor: pointer;
-            color: #94a3b8; line-height: 1;
+            color: #75162E; line-height: 1;
         }
-        .modal-close:hover { color: #475569; }
+        .modal-close:hover { color: #2d040e; }
 
         /* ---- Add button next to select ---- */
         .select-with-add {
@@ -194,7 +194,7 @@
                     </div>
                     <div class="form-group">
                         <label for="fda_no">เลขที่จดแจ้ง :</label>
-                        <input type="text" id="fda_no" name="fda_no" value="<%= product.fda_number %>">
+                        <input type="text" id="fda_no" name="fda_no" value="<%= product.fda_number %>" required>
                     </div>
                 </div>
 
@@ -203,11 +203,17 @@
                     <button type="submit" class="style-button submit-btn">บันทึก</button>
                 </div>
             </form>
+           <% if (typeof error !== 'undefined' && error) { %>
+        <div class="error-box" style="margin-bottom: 15px;">
+            <span>⚠️</span>
+            <span><%= error %></span>
+        </div>
+        <% } %>
         </div>
 
-    <!-- ==================== MODALS ==================== -->
+    
 
-    <!-- Brand Modal -->
+    
     <div class="modal-overlay" id="modal-brand">
         <div class="modal-box">
             <button class="modal-close" onclick="closeModal('brand')" type="button">✕</button>
@@ -221,7 +227,7 @@
         </div>
     </div>
 
-    <!-- Category Modal -->
+    
     <div class="modal-overlay" id="modal-category">
         <div class="modal-box">
             <button class="modal-close" onclick="closeModal('category')" type="button">✕</button>
@@ -235,7 +241,7 @@
         </div>
     </div>
 
-    <!-- Supplier Modal -->
+    
     <div class="modal-overlay" id="modal-supplier">
         <div class="modal-box">
             <button class="modal-close" onclick="closeModal('supplier')" type="button">✕</button>
@@ -249,9 +255,9 @@
         </div>
     </div>
 
-    <!-- ==================== SCRIPTS ==================== -->
+    
     <script>
-        // --- Image preview ---
+        
         document.addEventListener('DOMContentLoaded', function () {
             const fileInput = document.getElementById('product-image');
             const imagePreview = document.getElementById('image-preview');
@@ -276,7 +282,7 @@
             });
         });
 
-        // --- Modal config ---
+        
         const modalConfig = {
             brand:    { api: '/api/brands',     idKey: 'brand_id',    nameKey: 'brand_name',    selectId: 'brand'    },
             category: { api: '/api/categories', idKey: 'category_id', nameKey: 'category_name', selectId: 'category' },
@@ -294,14 +300,14 @@
             document.getElementById(`modal-${type}`).classList.remove('active');
         }
 
-        // Close modal when clicking outside the box
+        
         document.querySelectorAll('.modal-overlay').forEach(overlay => {
             overlay.addEventListener('click', function(e) {
                 if (e.target === this) this.classList.remove('active');
             });
         });
 
-        // Submit on Enter key
+        
         ['brand', 'category', 'supplier'].forEach(type => {
             document.getElementById(`input-${type}`).addEventListener('keydown', function(e) {
                 if (e.key === 'Enter') { e.preventDefault(); submitModal(type); }
@@ -340,7 +346,7 @@
                     return;
                 }
 
-                // Add the new option to the select and auto-select it (alphabetical order)
+                
                 const select = document.getElementById(cfg.selectId);
                 const option = new Option(data[cfg.nameKey], data[cfg.idKey], true, true);
                 let inserted = false;

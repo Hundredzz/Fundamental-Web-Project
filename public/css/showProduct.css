@@ -102,10 +102,10 @@ body:has(.popup-overlay.active) {
 
 .product-card .button-container form {
     display: contents;
-    /* This makes the form "invisible" to the layout */
+    
 }
 
-/* 2. Target the button inside the form to match the others */
+
 .product-card .button-container form button {
     flex: 1;
     padding: 5px;
@@ -120,7 +120,7 @@ body:has(.popup-overlay.active) {
     justify-content: center;
 }
 
-/* 3. Ensure the icon inside the form button scales correctly */
+
 .product-card .button-container form button img {
     width: 100%;
     height: 100%;
@@ -155,26 +155,26 @@ body:has(.popup-overlay.active) {
 }
 
 
-/* The Dark Background Behind the Pop-up */
+
 .popup-overlay {
     display: none;
-    /* Hidden by default */
+    
     position: fixed;
     top: 0;
     left: 0;
     width: 100vw;
     height: 101vh;
     background-color: rgba(0, 0, 0, 0.6);
-    /* Dark semi-transparent background */
+    
     z-index: 4;
-    /* Forces it to the absolute top of the page */
+    
 
-    /* Centers the white box in the middle of the screen */
+    
     justify-content: center;
     align-items: center;
 }
 
-/* The Pop-up Box Itself */
+
 .popup-content-product {
     display: flex;
     background-color: var(--color-cream);
@@ -238,7 +238,7 @@ body:has(.popup-overlay.active) {
     padding-top: 10px;
 }
 
-/* The class JavaScript will add to make it visible */
+
 .popup-overlay.active {
     display: flex;
 }
@@ -352,7 +352,7 @@ body:has(.popup-overlay.active) {
         overflow: hidden !important;
     }
 
-    /* รวมรูปและบาร์โค้ดไว้ในโซนสีขาวโซนเดียว */
+    
     .product-card .img-container {
         background-color: #fff !important;
         padding: 10px !important;
@@ -364,7 +364,7 @@ body:has(.popup-overlay.active) {
     }
 
     .product-card img {
-        max-height: 180px !important; /* คุมความสูงไม่ให้โย่งเกินไป */
+        max-height: 180px !important; 
         width: auto !important;
         object-fit: contain !important;
     }
@@ -378,7 +378,7 @@ body:has(.popup-overlay.active) {
         justify-content: center !important;
     }
 
-    /* โซนข้อความ: ปรับให้ชิดกันมากขึ้น ไม่ห่างเหมือนอันก่อน */
+    
     .product-card h2 {
         font-size: 1.1rem !important;
         color: var(--color-gold-muted) !important;
@@ -390,11 +390,11 @@ body:has(.popup-overlay.active) {
 
     .product-card p {
         font-size: 0.95rem !important;
-        margin: 2px 15px !important; /* ลด margin ให้ดูเป็นกลุ่มก้อน */
+        margin: 2px 15px !important; 
         color: var(--color-cream) !important;
     }
 
-    /* โซนปุ่ม: จัดให้เรียงสวยพอดีขอบ */
+    
     .product-card .button-container {
         display: flex !important;
         padding: 12px 15px !important;

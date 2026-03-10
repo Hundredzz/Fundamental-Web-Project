@@ -33,7 +33,7 @@
                 </div>
             </div>
             <% }) %>
-                <%- include('pagination', {ejsName : ejsName ,currentPage: currentPage, totalPages: totalPages}); %>
+                <%- include('pagination', {ejsName : ejsName, branchId : branchId ,currentPage: currentPage, totalPages: totalPages}); %>
             <% } else { %>
                             <div class="not-found-message">
                                 <h1>ไม่พบสินค้าที่คุณค้นหา</h1>

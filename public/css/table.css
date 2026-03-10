@@ -5,7 +5,7 @@ body {
     overflow-x: hidden;
 }
 
-/* Let the container control the width, not the table itself */
+
 table {
     width: 100%;
     border-collapse: collapse;
@@ -41,7 +41,7 @@ tr:nth-child(odd) {
     margin-top: 20px;
     box-shadow: 0 4px 8px rgba(0,0,0,0.1); 
     
-    /* Optional: Makes the scrollbar look neat inside the rounded corners */
+    
     border: 1px solid #3B010B; 
 }
 
@@ -52,6 +52,6 @@ tr:nth-child(odd) {
     background-color: #75162D; 
     color: white;
     
-    /* Trick to fix sticky borders disappearing while scrolling */
+    
     box-shadow: inset 0 -1px 0 #3B010B, inset 0 1px 0 #3B010B; 
 }

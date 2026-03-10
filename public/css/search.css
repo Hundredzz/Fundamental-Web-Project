@@ -16,15 +16,15 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 
 input::placeholder {
     color: #f2d9a07c;
-    /* ปรับให้จางลงนิดนึงเพื่อให้แยกออกว่าคือคำแนะนำ */
+    
 }
 
-/* 3. สำหรับ Browser ตระกูล Safari / iOS (เผื่อมันดื้อ) */
+
 input::-webkit-input-placeholder {
     color: #f2d9a07c;
 }
 
-/* 4. สำหรับกรณี Browser เติมคำให้อัตโนมัติ (Autofill) */
+
 input:-webkit-autofill,
 input:-webkit-autofill:hover,
 input:-webkit-autofill:focus {

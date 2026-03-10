@@ -1,19 +1,19 @@
 .popup-overlay {
-    display: none; /* Hidden by default */
+    display: none; 
     position: fixed; 
     top: 0;
     left: 0;
     width: 100vw;
     height: 101vh;
-    background-color: rgba(0, 0, 0, 0.6); /* Dark semi-transparent background */
-    z-index: 1; /* Forces it to the absolute top of the page */
+    background-color: rgba(0, 0, 0, 0.6); 
+    z-index: 1; 
     
-    /* Centers the white box in the middle of the screen */
+    
     justify-content: center;
     align-items: center;
 }
 
-/* The Pop-up Box Itself */
+
 .popup-content {
     display: flex;
     flex-direction: column;
