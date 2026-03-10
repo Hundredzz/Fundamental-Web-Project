@@ -194,7 +194,7 @@
                     </div>
                     <div class="form-group">
                         <label for="fda_no">เลขที่จดแจ้ง :</label>
-                        <input type="text" id="fda_no" name="fda_no" value="<%= product.fda_number %>">
+                        <input type="text" id="fda_no" name="fda_no" value="<%= product.fda_number %>" required>
                     </div>
                 </div>
 
@@ -205,9 +205,9 @@
             </form>
         </div>
 
-    <!-- ==================== MODALS ==================== -->
+    
 
-    <!-- Brand Modal -->
+    
     <div class="modal-overlay" id="modal-brand">
         <div class="modal-box">
             <button class="modal-close" onclick="closeModal('brand')" type="button">✕</button>
@@ -221,7 +221,7 @@
         </div>
     </div>
 
-    <!-- Category Modal -->
+    
     <div class="modal-overlay" id="modal-category">
         <div class="modal-box">
             <button class="modal-close" onclick="closeModal('category')" type="button">✕</button>
@@ -235,7 +235,7 @@
         </div>
     </div>
 
-    <!-- Supplier Modal -->
+    
     <div class="modal-overlay" id="modal-supplier">
         <div class="modal-box">
             <button class="modal-close" onclick="closeModal('supplier')" type="button">✕</button>
@@ -249,9 +249,9 @@
         </div>
     </div>
 
-    <!-- ==================== SCRIPTS ==================== -->
+    
     <script>
-        // --- Image preview ---
+        
         document.addEventListener('DOMContentLoaded', function () {
             const fileInput = document.getElementById('product-image');
             const imagePreview = document.getElementById('image-preview');
@@ -276,7 +276,7 @@
             });
         });
 
-        // --- Modal config ---
+        
         const modalConfig = {
             brand:    { api: '/api/brands',     idKey: 'brand_id',    nameKey: 'brand_name',    selectId: 'brand'    },
             category: { api: '/api/categories', idKey: 'category_id', nameKey: 'category_name', selectId: 'category' },
@@ -294,14 +294,14 @@
             document.getElementById(`modal-${type}`).classList.remove('active');
         }
 
-        // Close modal when clicking outside the box
+        
         document.querySelectorAll('.modal-overlay').forEach(overlay => {
             overlay.addEventListener('click', function(e) {
                 if (e.target === this) this.classList.remove('active');
             });
         });
 
-        // Submit on Enter key
+        
         ['brand', 'category', 'supplier'].forEach(type => {
             document.getElementById(`input-${type}`).addEventListener('keydown', function(e) {
                 if (e.key === 'Enter') { e.preventDefault(); submitModal(type); }
@@ -340,7 +340,7 @@
                     return;
                 }
 
-                // Add the new option to the select and auto-select it (alphabetical order)
+                
                 const select = document.getElementById(cfg.selectId);
                 const option = new Option(data[cfg.nameKey], data[cfg.idKey], true, true);
                 let inserted = false;

@@ -14,13 +14,13 @@ body,button,input,select{font-family: "Prompt", sans-serif;}
     height: 100vh;
     box-sizing: border-box;
     width: 270px;
-    position: fixed; /* Stays fixed to the left side */
+    position: fixed; 
     top: 0;
-    left: -272px; /* Hidden off-screen by default */
-    background-color: var(--color-cherry); /* Dark sidebar color */
+    left: -272px; 
+    background-color: var(--color-cherry); 
     padding: 20px;
     padding-top: 150px;
-    transition: left 0.3s ease; /* Smooth slide in */
+    transition: left 0.3s ease; 
 }
 
 .side-menu a.user-button {
@@ -43,32 +43,32 @@ body,button,input,select{font-family: "Prompt", sans-serif;}
 .side-menu a:hover {
     padding: 8px 13px;
     color: var(--color-cherry);
-    background-color: var(--color-cream); /* Slight highlight on hover */
+    background-color: var(--color-cream); 
     box-shadow: inset 0px 4px 4px rgba(0, 0, 0, 0.25);
     border: 2px solid var(--color-cream);
     box-sizing: border-box;
 }
 
 
-/* Class to open the menu */
+
 .side-menu.open {
     left: 0; 
 }
 
-/* --- The Main Content Wrapper --- */
+
 .main-content {
-    transition: margin-left 0.3s ease; /* Smooth push effect */
+    transition: margin-left 0.3s ease; 
     margin-top: 80px;
     margin-left: 0; 
     padding: 20px;
 }
 
-/* Class to push the content over */
+
 .main-content.pushed {
-    margin-left: 270px; /* Matches the width of the sidebar */
+    margin-left: 270px; 
 }
 
-/* --- The Toggle Button --- */
+
 .menu-toggle-btn {
     padding: 25px 35px;
     display: flex;
@@ -77,11 +77,11 @@ body,button,input,select{font-family: "Prompt", sans-serif;}
     top: 0;
     left: 0;
     z-index: 3;
-    /* REMOVED: position: fixed; top: 0; left: 0; z-index: 1; */
+    
     cursor: pointer;
     background: none;
     border: none;
-    margin-bottom: 0; /* Changed from 20px so it doesn't stretch the header weirdly */
+    margin-bottom: 0; 
     transition: color 0.3s ease;
 }
 
@@ -91,14 +91,14 @@ body,button,input,select{font-family: "Prompt", sans-serif;}
 }
 
 #web-header {
-    position: fixed; /* Moves the fixed position to the wrapper */
+    position: fixed; 
     top: 0;
     left: 0;
     height: 11vh;
     width: 100vw;
-    z-index: 1; /* Make sure it stays above your main content */
-    background-color: transparent; /* Starts invisible */
-    transition: background-color 0.3s ease; /* Smooth transition */
+    z-index: 1; 
+    background-color: transparent; 
+    transition: background-color 0.3s ease; 
 }
 
 .menu-toggle-btn h2{
@@ -228,8 +228,8 @@ body, button, input, select { font-family: "Prompt", sans-serif; }
         width: 100vw;
         left: -100vw;
         height: 100vh;
-        padding: 0 20px 30px 20px;  /* Remove top padding override */
-        padding-top: 80px;           /* Reduce from 150px → just clear the header */
+        padding: 0 20px 30px 20px;  
+        padding-top: 80px;           
         justify-content: space-between;
     }
 

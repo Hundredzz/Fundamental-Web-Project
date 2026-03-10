@@ -42,10 +42,10 @@ h1 {
 }
 
 .notification-bell {
-    position: fixed;        /* Change absolute → fixed */
+    position: fixed;        
     top: 18px;
-    right: 15px;            /* Fixed px instead of 3vw */
-    z-index: 4;             /* Above header z-index: 1 */
+    right: 15px;            
+    z-index: 4;             
 }
 
 
@@ -59,7 +59,7 @@ h1 {
 }
 
 .bell-icon {
-    /* Remove position:absolute — bell-icon is already inside notification-bell */
+    
     position: static;
     width: 30px;
     height: 30px;
@@ -178,7 +178,7 @@ h1 {
     font-size: 12px;
 }
 
-/* ===== RESPONSIVE ===== */
+
 @media (max-width: 1024px) {
     .small {
         width: 45%;
@@ -223,7 +223,7 @@ h1 {
         height: 26px;
     }
 
-    /* Prevent dropdown from going off right edge */
+    
     .noti-dropdown {
         width: min(280px, 90vw);
         right: 0;

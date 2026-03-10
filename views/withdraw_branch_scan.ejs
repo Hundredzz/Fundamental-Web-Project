@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <%- include('head') %>
+    <title>เบิกสินค้าออกคลัง</title>
+    <link rel="stylesheet" href="/css/withdraw_layout.css">
+    <link rel="stylesheet" href="/css/withdraw_branch.css">
+</head>
+<body>
+    <%- include('nav') %>
+    <div class="main-content" id="main-content">
+    <h1 class="header-title">เบิกสินค้าออกคลัง</h1>
+    <div class="branch-card">
+        <h2>กรุณาเลือกสาขาปลายทาง</h2>
+        <form action="/middle/withdraw/<%=data%>" method="GET">
+            <select name="branch_id" class="branch-select" onchange="this.form.submit()">
+                <option value="" disabled selected>เลือกสาขา</option>
+                <% branches.forEach(branch => {%>
+                    <option value="<%=branch.branch_id%>"><%=branch.branch_name%></option>
+                <%})%>
+            </select>
+        </form>
+    </div>
+</div>
+</body>
+</html>

@@ -16,18 +16,18 @@ function confirmDetail(title, data, path) {
         </div>
     `;
 
-    // 2. Open the popup right away so the user sees it reacting
+    
     popup.classList.add('active');
 
 }
 
-// Close button logic
+
 function closePopUp() {
     popup.classList.remove('active');
     popup.innerHTML = '';
 }
 
-// Close if clicking outside the box
+
 window.addEventListener('click', (event) => {
     if (event.target === popup) {
         popup.classList.remove('active');

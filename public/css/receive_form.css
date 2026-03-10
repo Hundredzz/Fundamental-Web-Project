@@ -1,4 +1,4 @@
-/* public/css/receive_form.css */
+
 body {
     margin: 0;
     background: url(/img/big-background.png) repeat, #3B010B;
@@ -30,7 +30,7 @@ body {
 
 .form-card {
     background-color: #5d0e1a;
-    /* แบ็คกราวด์สีแดงเข้ม */
+    
     color: #ffffff;
     padding: 30px;
     border-radius: 15px;

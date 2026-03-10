@@ -15,10 +15,12 @@
             <a href="/report">สร้างรายงาน</a>
             <a href="/product">จัดการข้อมูลสินค้า</a>
             <a href="/history">ประวัติการรับ - จ่ายสินค้า</a>
-        <% } else { %>
+        <% } else if (user && user.role==='Staff' ) { %>
             <a href="/dashboard">หน้าหลัก</a>
             <a href="/product">จัดการข้อมูลสินค้า</a>
             <a href="/history">ประวัติการรับ - จ่ายสินค้า</a>
+        <% } else { %>
+            <a href="/dashboard">หน้าหลัก</a>
         <% } %>
     </div>
     <a href="/logout" class="user-button">Logout</a>

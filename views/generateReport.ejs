@@ -206,13 +206,13 @@
         </div>
 
         <script>
-            // รับค่า type จากฝั่ง Backend มาเก็บไว้ในตัวแปร JavaScript
+            
             const reportType = "<%= type %>";
 
-            // 1. เพิ่มคำว่า async เข้าไปตรงนี้
+            
             async function generateTable() {
 
-                // รีเซ็ต UI
+                
                 const errorBox = document.getElementById('error-box');
                 const tableContainer = document.getElementById('tableContainer');
                 const actionBar = document.getElementById('actionBar');
@@ -220,7 +220,7 @@
                 tableContainer.classList.add('hidden');
                 actionBar.classList.add('hidden');
 
-                // ใช้ reportType เป็นพารามิเตอร์หลัก
+                
                 let queryParams = new URLSearchParams({ reportType: reportType });
 
                 const productName = document.getElementById('productName').value;
@@ -240,18 +240,18 @@
                     if (start) queryParams.append('startDate', start);
                     if (end) queryParams.append('endDate', end);
 
-                    // 📌 2. ดึงค่าฟิลเตอร์ใหม่ของรายงาน Movement (ประเภทรายการ & ผู้ทำรายการ)
+                    
                     const transType = document.getElementById('transType').value;
                     const employeeName = document.getElementById('employee_name').value;
                     const sortMovement = document.getElementById('sortMovement').value;
 
                     if (transType) queryParams.append('transType', transType);
                     if (employeeName) queryParams.append('employee_name', employeeName);
-                    if (sortMovement) queryParams.append('sortBy', sortMovement); // ส่งค่าชื่อ sortBy ไปให้ Backend
+                    if (sortMovement) queryParams.append('sortBy', sortMovement); 
 
                 } else if (reportType === 'stock') {
                     const brandId = document.getElementById('brandId').value;
-                    const sortBy = document.getElementById('sortBy').value; // <-- เพิ่มบรรทัดนี้
+                    const sortBy = document.getElementById('sortBy').value; 
                     const productLeft = document.getElementById('productLeft').value;
 
                     if (brandId) queryParams.append('brandId', brandId);
@@ -271,7 +271,7 @@
                 }
 
                 try {
-                    // 2. เติม /api/ ข้างหน้า URL ให้ตรงกับ Backend
+                    
                     const response = await fetch(`/generate-report?${queryParams.toString()}`);
                     const data = await response.json();
 
@@ -281,14 +281,14 @@
                         return;
                     }
 
-                    // สร้างหัวตารางและเนื้อหาตามประเภทรายงาน
+                    
                     renderTable(reportType, data);
 
-                    // แสดงตารางและปุ่ม Export
+                    
                     tableContainer.classList.remove('hidden');
                     actionBar.classList.remove('hidden');
 
-                    // บันทึก query ไว้ใช้กับปุ่ม Export
+                    
                     window.currentReportQuery = queryParams.toString();
 
                 } catch (err) {
@@ -298,7 +298,7 @@
                 }
             }
 
-            // ฟังก์ชันวาดตาราง (เหมือนเดิม)
+            
             function renderTable(type, data) {
                 const thead = document.getElementById('tableHeader');
                 const tbody = document.getElementById('tableBody');
@@ -358,7 +358,7 @@
                 }
             }
 
-            // จัดการเมื่อกดปุ่ม Export (เหมือนเดิม)
+            
             document.getElementById('exportBtn').addEventListener('click', function () {
                 if (window.currentReportQuery) {
                     window.location.href = `/export-report?${window.currentReportQuery}`;

@@ -1,4 +1,4 @@
-/* public/css/receive-list.css */
+
 body {
     margin: 0;
     background: url(/img/big-background.png) repeat, #3B010B;
@@ -21,11 +21,11 @@ body {
     font-weight: bold;
 }
 
-/* เปลี่ยนจาก Glass เป็น Container ทึบขอบหนา */
+
 .list-container {
     width: 100%;
     max-width: 800px;
-    background-color: #fdf5e6; /* สีครีมเข้มทึบ */
+    background-color: #fdf5e6; 
     border: 3px solid #5d0e1a;
     border-radius: 12px;
     padding: 15px;
@@ -33,7 +33,7 @@ body {
 }
 
 .product-card {
-    background-color: #f9e2b8; /* สีเหลืองนวลทึบ */
+    background-color: #f9e2b8; 
     margin-bottom: 12px;
     padding: 15px 25px;
     display: flex;

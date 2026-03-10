@@ -1,17 +1,22 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-    <meta charset="UTF-8">
+    <%- include('head') %>
     <title>แจ้งเตือนสินค้าใกล้หมดอายุ</title>
+    <link rel="stylesheet" href="/css/table.css">
+    <link rel="stylesheet" href="/css/history.css">
 </head>
 <body>
+    <%- include('nav') %>
+    <div class="main-content " id="main-content">
     <h1>⚠️ สินค้าที่กำลังจะหมดอายุ (ภายใน 30 วัน)</h1>
+    <div class="table-scroll-container">
     <table border="1" cellpadding="10">
         <thead>
             <tr>
-                <th>SKU</th>
+                <th>รหัสสินค้า</th>
                 <th>ชื่อสินค้า</th>
-                <th>Lot/Batch</th>
+                <th>รหัสล็อต</th>
                 <th>จำนวนคงเหลือ</th>
                 <th>วันหมดอายุ</th>
             </tr>
@@ -32,7 +37,7 @@
             <% } %>
         </tbody>
     </table>
-    <br>
-    <a href="/history">กลับไปหน้าประวัติ</a>
+    </div>
+    </div>
 </body>
 </html>

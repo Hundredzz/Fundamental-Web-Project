@@ -11,7 +11,7 @@ body {
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.6); /* พื้นหลังดำจางๆ */
+    background-color: rgba(0, 0, 0, 0.6); 
     display: flex;
     justify-content: center;
     align-items: center;
@@ -19,7 +19,7 @@ body {
 }
 
 .modal-box {
-    background-color: #5d0e1a; /* สีแดงเลือดหมู */
+    background-color: #5d0e1a; 
     color: white;
     padding: 50px 100px;
     width: 40%;

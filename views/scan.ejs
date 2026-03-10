@@ -48,7 +48,7 @@
         
         function onScanSuccess(decodedText) {
             html5QrcodeScanner.clear().then(() => {
-                window.location.href = `/product?search=${encodeURIComponent(decodedText)}&openPopup=true`;
+                window.location.href = `/select-path/${encodeURIComponent(decodedText)}`;
             }).catch(err => {
                 console.error("Scanner clear error:", err);
             });
